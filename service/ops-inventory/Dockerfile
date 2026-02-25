@@ -20,6 +20,6 @@ RUN npm install --omit=dev
 
 COPY --from=build /app/dist ./dist
 
-EXPOSE 3033
+EXPOSE 3032
 
 CMD ["node", "dist/index.js"]

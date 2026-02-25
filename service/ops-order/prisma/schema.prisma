@@ -1,0 +1,86 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "windows", "linux-musl-openssl-3.0.x", "linux-musl"]
+}
+
+datasource db {
+  provider      = "postgresql"
+  url           = env("DB_URL")
+}
+
+model Account {
+  id                      Int               @id @default(autoincrement())
+  gameAccountId           String            @unique
+  universalAccountId      String            
+  active                  Boolean           @default(true)
+  fcmToken                String            
+  realmId                 String
+  languageCode            String            @default("en")
+  platform                String            @default("unknown")
+  blackList               String[]          @default([])
+  topics                  AccountTopic[]
+  createdAt               DateTime          @default(now())
+  updatedAt               DateTime          @updatedAt
+
+  @@index([gameAccountId])
+  @@index([realmId])
+  @@index([realmId, blackList])
+  @@index([universalAccountId])
+}
+
+model Topic {
+  id                      Int               @id @default(autoincrement())
+  name                    String            @unique
+  type                    TopicType         @relation(fields: [typeId], references: [id], onDelete: Cascade)
+  typeId                  Int             
+  subscribers             AccountTopic[]
+  createdAt               DateTime          @default(now())
+  updatedAt               DateTime          @updatedAt   
+
+  @@index([name])
+}
+
+model TopicType {
+  id                      Int               @id @default(autoincrement())
+  type                    String            @unique
+  mode                    String
+  basic                   Boolean
+  locked                  Boolean
+  topics                  Topic[]
+  createdAt               DateTime          @default(now())
+  updatedAt               DateTime          @updatedAt   
+
+  @@index([type])
+  @@index([type, locked])
+}
+
+model AccountTopic {
+  accountId               Int
+  account                 Account           @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  topicId                 Int
+  topic                   Topic             @relation(fields: [topicId], references: [id], onDelete: Cascade)
+
+  @@id([accountId, topicId])
+}
+
+model Journal {
+  id                      Int               @id @default(autoincrement())
+  status                  String
+  action                  String            
+  message                 String              
+  createdAt               DateTime          @default(now())
+  updatedAt               DateTime          @updatedAt
+
+  @@index([action])
+}
+
+model Template {
+  id                      Int               @id @default(autoincrement())
+  name                    String            @unique
+  version                 Int
+  payload                 Json
+  createdAt               DateTime          @default(now())
+  updatedAt               DateTime          @updatedAt
+
+  @@index([name])
+}

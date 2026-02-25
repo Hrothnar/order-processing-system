@@ -1,7 +1,7 @@
 {
-    "name": "worker-service",
+    "name": "order-service",
     "version": "1.0.0",
-    "description": "Service for handling event from message broker",
+    "description": "Service for processing orders",
     "main": "/src/index.js",
     "type": "module",
     "keywords": [

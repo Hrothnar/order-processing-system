@@ -24,14 +24,14 @@
     },
     "author": "Kirill Tatarenko",
     "license": "MIT",
-    "packageManager": "pnpm@10.24.0",
+    "packageManager": "pnpm@10.30.0",
     "scripts": {
-        "build": "pnpm --filter=\"./application/**\" build",
-        "start": "pnpm --parallel --filter=\"./application/**\" start",
-        "build:start": "pnpm --parallel --filter=\"./application/**\" build:start",
-        "test": "pnpm --filter=\"./application/**\" test",
-        "test:unit": "pnpm --filter=\"./application/**\" test:unit",
-        "test:integration": "pnpm --filter=\"./application/**\" test:integration",
-        "test:e2e": "pnpm --filter=\"./application/**\" test:e2e"
+        "build": "pnpm --filter=\"./service/**\" build",
+        "start": "pnpm --parallel --filter=\"./service/**\" start",
+        "build:start": "pnpm --parallel --filter=\"./service/**\" build:start",
+        "test": "pnpm --filter=\"./service/**\" test",
+        "test:unit": "pnpm --filter=\"./service/**\" test:unit",
+        "test:integration": "pnpm --filter=\"./service/**\" test:integration",
+        "test:e2e": "pnpm --filter=\"./service/**\" test:e2e"
     }
 }
