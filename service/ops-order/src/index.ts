@@ -1,9 +1,9 @@
 import express from "express";
 
-import { kafkaConfig } from "./config/KafkaConfig.js";
-
 import "./config/PrismaConfig.js";
 import { kafkaProducer } from "./broker/producer/KafkaProducer.js";
+import { kafkaConfig } from "./config/KafkaConfig.js";
+import { coolDown } from "./util/Utility.js";
 
 const HOST = process.env.HOST;
 const PORT = Number(process.env.PORT);
@@ -16,15 +16,19 @@ app.use(express.urlencoded({ extended: false }));
 app.listen(PORT, HOST, async () => {
     try {
 
-        await new Promise((v) => setInterval(v, 3333));
-        await kafkaConfig.initialize();
-        await new Promise((v) => setInterval(v, 3333));
+        await coolDown(2222);
+
+        await kafkaConfig.initializeKafka();
+        await kafkaConfig.registerProducer();
+        await kafkaConfig.registerConsumer();
+        await kafkaConfig.subscribeConsumer(["ops-order"]);
 
         await kafkaProducer.send([{ key: "test", value: JSON.stringify({ payload: "some cool information!!!" }) }]);
 
         console.log(`[Server]\t\tStarted and running at host: [${HOST}] and port: [${PORT}].`);
+        console.log("=======================================================================================================");
     } catch (error) {
-        console.log(`[Server]\t\tThe server could not start`);
+        console.log(`[Server]\t\tCould not start`);
         console.error(error);
         process.exit(1);
     }
@@ -33,7 +37,7 @@ app.listen(PORT, HOST, async () => {
 process.on("uncaughtException", function processUncaughtException(error: any) {
     setTimeout(() => {
         console.error(error);
-        console.log("[Server]\t\tAn uncaught exception has been intercepted by event listener. Program is shutting down.");
+        console.log("[Server]\t\t\tAn uncaught exception has been intercepted by event listener. Program is shutting down.");
         process.exit(1);
     }, 3333);
 });

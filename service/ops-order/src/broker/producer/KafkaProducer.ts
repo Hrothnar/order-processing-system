@@ -17,8 +17,6 @@ export class KafkaProducer {
 
         console.dir(result);
     }
-
-
 }
 
 export const kafkaProducer = new KafkaProducer();
