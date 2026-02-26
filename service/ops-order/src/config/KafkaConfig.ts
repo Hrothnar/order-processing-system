@@ -2,10 +2,9 @@ import { Consumer, Kafka, logLevel, Producer } from "kafkajs";
 
 import { kafkaConsumer } from "../broker/consumer/KafkaConsumer.js";
 import { coolDown } from "../util/Utility.js";
+import { KAFKA_BROKERS, KAFKA_CLIENT_ID, KAFKA_CONSUMER_GROUP_ID } from "../type/Env.js";
 
 export class KafkaConfig {
-
-    KAFKA_GROUP_ID = process.env.KAFKA_GROUP_ID || "order-processing";
 
     private kafka: Kafka = null;
     private producer: Producer = null;
@@ -17,8 +16,8 @@ export class KafkaConfig {
         }
 
         this.kafka = new Kafka({
-            clientId: "ops-order",
-            brokers: ["kafka:9092"],
+            clientId: KAFKA_CLIENT_ID,
+            brokers: KAFKA_BROKERS,
             retry: {
                 restartOnFailure: async (error: Error) => true
             },
@@ -38,7 +37,7 @@ export class KafkaConfig {
 
     async registerConsumer() {
         this.consumer = this.kafka.consumer({
-            groupId: this.KAFKA_GROUP_ID
+            groupId: KAFKA_CONSUMER_GROUP_ID
         });
 
         await this.consumer.connect();
