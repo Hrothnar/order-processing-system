@@ -1,7 +1,7 @@
 import { Consumer, Kafka, logLevel, Producer } from "kafkajs";
 
 import { kafkaConsumer } from "../broker/consumer/KafkaConsumer.js";
-import { coolDown } from "../util/Utility.js";
+import { sleep } from "../util/Utility.js";
 import { KAFKA_BROKERS, KAFKA_CLIENT_ID, KAFKA_CONSUMER_GROUP_ID } from "../type/Env.js";
 
 export class KafkaConfig {
@@ -57,7 +57,7 @@ export class KafkaConfig {
                     throw error;
                 }
 
-                await coolDown(128);
+                await sleep(128);
             }
         }
 

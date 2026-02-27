@@ -3,7 +3,8 @@ import express from "express";
 import "./config/PrismaConfig.js";
 import { kafkaProducer } from "./broker/producer/KafkaProducer.js";
 import { kafkaConfig } from "./config/KafkaConfig.js";
-import { coolDown } from "./util/Utility.js";
+import { sleep } from "./util/Utility.js";
+import { outboxWorker } from "./worker/OutboxWorker.js";
 
 const HOST = process.env.HOST;
 const PORT = Number(process.env.PORT);
@@ -16,14 +17,16 @@ app.use(express.urlencoded({ extended: false }));
 app.listen(PORT, HOST, async () => {
     try {
 
-        await coolDown(2222);
+        // await coolDown(2222);
 
-        await kafkaConfig.initializeKafka();
-        await kafkaConfig.registerProducer();
-        await kafkaConfig.registerConsumer();
-        await kafkaConfig.subscribeConsumer(["ops-order"]);
+        // await kafkaConfig.initializeKafka();
+        // await kafkaConfig.registerProducer();
+        // await kafkaConfig.registerConsumer();
+        // await kafkaConfig.subscribeConsumer(["ops-order"]);
 
-        await kafkaProducer.send([{ key: "test", value: JSON.stringify({ payload: "some cool information!!!" }) }]);
+        // await kafkaProducer.send([{ key: "test", value: JSON.stringify({ payload: "some cool information!!!" }) }]);
+
+        outboxWorker.registerWorker();
 
         console.log(`[Server]\t\tStarted and running at host: [${HOST}] and port: [${PORT}].`);
         console.log("=======================================================================================================");
