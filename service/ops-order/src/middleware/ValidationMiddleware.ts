@@ -1,14 +1,14 @@
 import { Request, Response, NextFunction } from "express";
-import { ZodObject, ZodError, ZodEffects } from "zod";
+import { ZodObject, ZodError } from "zod";
 
 import { sendFailedResponse } from "../util/Utility.js";
 import { Exception } from "../exception/Exception.js";
 
-export const validate = (schemas: { [key: string]: AnyZodObject | ZodEffects<AnyZodObject> }): any => {
-    return async (request: Request | any, response: Response, next: NextFunction): Promise<any> => {
+export const validate = (schemas: { [key: string]: ZodObject }): any => {
+    return (request: Request | any, response: Response, next: NextFunction): void => {
         for (const [key, schema] of Object.entries(schemas)) {
             try {
-                const result = await schema.parseAsync(request[key]);
+                const result = schema.parse(request[key]);
                 request[key] = result;
             } catch (error) {
                 if (error instanceof ZodError) {
