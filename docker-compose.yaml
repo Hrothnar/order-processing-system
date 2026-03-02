@@ -1,12 +1,4 @@
 services:
-  # gateway:
-  #   build: ./service/ops-gateway
-  #   ports:
-  #     - "3000:3000"
-  #   env_file: ./service/ops-gateway/.env
-  #   depends_on:
-  #     - ops-order
-
   ops-order:
     build: ./service/ops-order
     ports:

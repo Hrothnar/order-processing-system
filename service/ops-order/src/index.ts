@@ -5,6 +5,8 @@ import { kafkaProducer } from "./broker/producer/KafkaProducer.js";
 import { kafkaConfig } from "./config/KafkaConfig.js";
 import { sleep } from "./util/Utility.js";
 import { outboxWorker } from "./worker/OutboxWorker.js";
+import { registerOpenAPI } from "./schema/SchemaRegistry.js";
+import { registryRouters } from "./router/RouterRegistry.js";
 
 const HOST = process.env.HOST;
 const PORT = Number(process.env.PORT);
@@ -17,7 +19,7 @@ app.use(express.urlencoded({ extended: false }));
 app.listen(PORT, HOST, async () => {
     try {
 
-        // await coolDown(2222);
+        await sleep();
 
         // await kafkaConfig.initializeKafka();
         // await kafkaConfig.registerProducer();
@@ -26,9 +28,12 @@ app.listen(PORT, HOST, async () => {
 
         // await kafkaProducer.send([{ key: "test", value: JSON.stringify({ payload: "some cool information!!!" }) }]);
 
-        outboxWorker.registerWorker();
+        registryRouters(app);
+        registerOpenAPI(app);
 
-        console.log(`[Server]\t\tStarted and running at host: [${HOST}] and port: [${PORT}].`);
+        // outboxWorker.registerWorker();
+
+        console.log(`[Server]\t\tStarted and running at [${HOST}:${PORT}].`);
         console.log("=======================================================================================================");
     } catch (error) {
         console.log(`[Server]\t\tCould not start`);

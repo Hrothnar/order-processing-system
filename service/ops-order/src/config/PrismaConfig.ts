@@ -24,7 +24,7 @@ if (process.env.NODE_ENV !== "production") {
 
 prisma.$connect()
     .then(() => {
-        console.log("[PostgreSQL]\tConnection for server has been established.");
+        console.log("[PostgreSQL]\t\tConnection for server has been established.");
     }).catch((error: any) => {
         console.error(error);
     });
