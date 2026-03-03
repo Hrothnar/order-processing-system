@@ -68,8 +68,8 @@ web_modules/
 .yarn-integrity
 
 # dotenv environment variable files
-.env
-.env.*
+# .env
+# .env.*
 !.env.example
 
 # parcel-bundler cache (https://parceljs.org/)
@@ -142,5 +142,5 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
 
-.vscode
-pnpm-lock.yaml
+*pnpm-lock.yaml
+*package-lock.json
