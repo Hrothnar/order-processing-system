@@ -3,16 +3,17 @@ import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 
 import { registry } from "./SchemaRegistry.js";
 import { OrderStatus } from "@prisma/client";
+import { IDEMPOTENCY_HEADER_NAME } from "../type/Type.js";
 
 extendZodWithOpenApi(z);
 
-export const OrderItemsSchema = z.object({
+export const OrderItemsRequest = z.object({
     sku: z.string().nonempty(),
     quantity: z.number().positive(),
     unitPrise: z.number().positive()
 });
 
-export const ShippingAddressSchema = z.object({
+export const ShippingAddressRequest = z.object({
     country: z.string().nonempty(),
     city: z.string().nonempty(),
     addressLine1: z.string().nonempty()
@@ -20,9 +21,9 @@ export const ShippingAddressSchema = z.object({
 
 export const CreateOrderRequestSchema = z.object({
     customerId: z.uuid(),
-    items: z.array(OrderItemsSchema),
+    items: z.array(OrderItemsRequest),
     currency: z.string().min(3).max(3),
-    shippingAddress: ShippingAddressSchema
+    shippingAddress: ShippingAddressRequest
 }).openapi("CreateOrderRequest");
 
 export const CreateOrderResponseSchema = z.object({
@@ -32,6 +33,10 @@ export const CreateOrderResponseSchema = z.object({
     currency: z.string(),
     createdAt: z.date()
 }).openapi("CreateOrderResponse");
+
+export const CreateOrderHeaderRequestSchema = z.object({
+    [IDEMPOTENCY_HEADER_NAME]: z.string().nonempty()
+});
 
 registry.registerPath({
     method: "post",
@@ -44,6 +49,7 @@ registry.registerPath({
                 "application/json": { schema: CreateOrderRequestSchema },
             },
         },
+        headers: CreateOrderHeaderRequestSchema
     },
     responses: {
         201: {
@@ -57,3 +63,5 @@ registry.registerPath({
 
 export type CreateOrderRequest = z.infer<typeof CreateOrderRequestSchema>;
 export type CreateOrderResponse = z.infer<typeof CreateOrderResponseSchema>;
+export type OrderItemsRequest = z.infer<typeof OrderItemsRequest>;
+export type ShippingAddressRequest = z.infer<typeof ShippingAddressRequest>;
