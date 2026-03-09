@@ -1,3 +1,5 @@
+import crypto from "node:crypto";
+
 import { Response, Request } from "express";
 
 export function getRandomNumber(min: number, max: number) {
@@ -31,4 +33,12 @@ export function sendSucceededResponse(response: Response, data?: any, code?: num
     }
 
     return response.status(code).json(data);
+}
+
+export function hash(body: Record<string, any>): string {
+    const canonical = JSON.stringify(body);
+    return crypto
+        .createHash("sha256")
+        .update(canonical)
+        .digest("hex");
 }

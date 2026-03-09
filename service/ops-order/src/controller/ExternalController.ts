@@ -15,6 +15,26 @@ export class ExternalController {
             return sendFailedResponse(response, error);
         }
     }
+
+    getOrder = async (request: Request, response: Response) => {
+        try {
+            response.locals.controllerName = this.getOrder.name;
+            const data = await orderService.getOrder(request.params.orderId as string);
+            return sendSucceededResponse(response, data);
+        } catch (error) {
+            return sendFailedResponse(response, error);
+        }
+    }
+
+    listOrders = async (request: Request, response: Response) => {
+        try {
+            response.locals.controllerName = this.listOrders.name;
+            const data = await orderService.listOrders(request.query);
+            return sendSucceededResponse(response, data);
+        } catch (error) {
+            return sendFailedResponse(response, error);
+        }
+    }
 }
 
 export const externalController = new ExternalController();

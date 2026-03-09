@@ -1,7 +1,9 @@
-import { OutboxStatus } from "@prisma/client";
+import { Outbox, OutboxStatus, PrismaClient } from "@prisma/client";
 
 import { prisma } from "../config/PrismaConfig.js";
 import * as ENV from "../type/Env.js";
+import { ITXClientDenyList } from "@prisma/client/runtime/library.js";
+import { OutboxInfo } from "../type/Type.js";
 
 export class OutboxRepository {
 
@@ -73,6 +75,11 @@ export class OutboxRepository {
                 AND lockedAt IS NOT NULL
                 AND lockedAt < now() - (interval '1 second' * ${ENV.OUTBOX_WORKER_LEASE_MIN * 60});
         `;
+    }
+
+    async createRecord(info: OutboxInfo, client: Omit<PrismaClient, ITXClientDenyList>): Promise<Outbox> {
+        const result = await client.outbox.create({ data: info });
+        return result;
     }
 }
 

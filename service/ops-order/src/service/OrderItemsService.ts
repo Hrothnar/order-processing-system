@@ -1,12 +1,13 @@
 import { ITXClientDenyList } from "@prisma/client/runtime/library";
+import { Order, OrderItem, PrismaClient } from "@prisma/client";
+
 import { orderItemRepository } from "../repository/OrderItemsRepository.js";
-import { OrderItemsRequest } from "../schema/ExternalSchemas.js";
-import { PrismaClient } from "@prisma/client";
+import { OrderItemsRequestSchema } from "../schema/ExternalSchemas.js";
 
 export class OrderItemService {
 
-    async createOrderItems(items: OrderItemsRequest[], client?: Omit<PrismaClient, ITXClientDenyList>): Promise<any> {
-        return orderItemRepository.createRecord(items);
+    async createOrderItems(items: OrderItemsRequestSchema[], order: Order, client?: Omit<PrismaClient, ITXClientDenyList>): Promise<OrderItem[]> {
+        return orderItemRepository.createOrderItems(items, order, client);
     }
 
 

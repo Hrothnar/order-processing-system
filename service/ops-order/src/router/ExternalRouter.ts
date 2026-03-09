@@ -13,6 +13,7 @@ export const initializeExternalRouters = function (app: Express) {
     router.use(printRequestStatus);
     // ==============================================================================
     router.post("/v1/orders/create", validate({ body: CreateOrderRequestSchema, headers: CreateOrderHeaderRequestSchema }), externalController.createOrder);
+    router.get("/v1/orders/:orderId", externalController.getOrder);
     // ==============================================================================
     app.use("/api/external", router);
 }

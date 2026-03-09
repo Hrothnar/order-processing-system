@@ -1,19 +1,19 @@
 import { z } from "zod";
 import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
+import { OrderStatus, OrderItem } from "@prisma/client";
 
 import { registry } from "./SchemaRegistry.js";
-import { OrderStatus } from "@prisma/client";
 import { IDEMPOTENCY_HEADER_NAME } from "../type/Type.js";
 
 extendZodWithOpenApi(z);
 
-export const OrderItemsRequest = z.object({
+export const OrderItemsRequestSchema = z.object({
     sku: z.string().nonempty(),
     quantity: z.number().positive(),
-    unitPrise: z.number().positive()
+    unitPrice: z.number().positive()
 });
 
-export const ShippingAddressRequest = z.object({
+export const ShippingAddressRequestSchema = z.object({
     country: z.string().nonempty(),
     city: z.string().nonempty(),
     addressLine1: z.string().nonempty()
@@ -21,9 +21,9 @@ export const ShippingAddressRequest = z.object({
 
 export const CreateOrderRequestSchema = z.object({
     customerId: z.uuid(),
-    items: z.array(OrderItemsRequest),
+    items: z.array(OrderItemsRequestSchema),
     currency: z.string().min(3).max(3),
-    shippingAddress: ShippingAddressRequest
+    shippingAddress: ShippingAddressRequestSchema
 }).openapi("CreateOrderRequest");
 
 export const CreateOrderResponseSchema = z.object({
@@ -61,7 +61,25 @@ registry.registerPath({
     },
 });
 
+export const GetOrderResponseSchema = z.object({
+    status: z.enum(OrderStatus),
+    items: z.array(OrderItemsRequestSchema),
+    totalAmount: z.number(),
+    failureReason: z.string().nullish(),
+    createdAt: z.date(),
+    updatedAt: z.date()
+});
+
+export const ListOrdersRequestQuerySchema = z.object({
+    customerId: z.string().nonempty(),
+    status: z.enum(OrderStatus).nullish(),
+    page: z.coerce.number().int().min(1).default(1),
+    size: z.coerce.number().int().min(1).max(100).default(20),
+});
+
 export type CreateOrderRequest = z.infer<typeof CreateOrderRequestSchema>;
 export type CreateOrderResponse = z.infer<typeof CreateOrderResponseSchema>;
-export type OrderItemsRequest = z.infer<typeof OrderItemsRequest>;
-export type ShippingAddressRequest = z.infer<typeof ShippingAddressRequest>;
+export type OrderItemsRequestSchema = z.infer<typeof OrderItemsRequestSchema>;
+export type ShippingAddressRequestSchema = z.infer<typeof ShippingAddressRequestSchema>;
+export type GetOrderResponse = z.infer<typeof GetOrderResponseSchema>;
+

@@ -1,13 +1,13 @@
 import { Router, Express } from "express";
 
-import { printRequestStatus } from "../middleware/RequestLogMiddleware.js";
+import { utilityController } from "../controller/UtilityController.js";
 
 export const initializeUtilityRouters = function (app: Express) {
     const router = Router();
 
-    router.use(printRequestStatus);
     // ==============================================================================
-
+    router.get("/liveness", utilityController.liveness);
+    router.get("/readiness", utilityController.readiness);
     // ==============================================================================
     app.use("/api/utility", router);
 }
