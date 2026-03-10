@@ -2,14 +2,18 @@ import { Response, Request } from "express";
 
 import { sendFailedResponse, sendSucceededResponse } from "../util/Utility.js";
 import { orderService } from "../service/OrderService.js";
-import { IDEMPOTENCY_HEADER_NAME } from "../type/Type.js";
+import { CreateOrderHeaderRequestSchema, CreateOrderRequestSchema, GetOrderRequestSchema, ListOrdersRequestQuerySchema } from "../schema/ExternalSchemas.js";
 
 export class ExternalController {
 
     createOrder = async (request: Request, response: Response) => {
         try {
             response.locals.controllerName = this.createOrder.name;
-            const data = await orderService.createOrder(request.body, request.header(IDEMPOTENCY_HEADER_NAME));
+
+            const body = CreateOrderRequestSchema.parse(request.body);
+            const idempotencyKey = CreateOrderHeaderRequestSchema.parse(request.header)["idempotency-key"];
+
+            const data = await orderService.createOrder(body, idempotencyKey);
             return sendSucceededResponse(response, data);
         } catch (error) {
             return sendFailedResponse(response, error);
@@ -19,7 +23,10 @@ export class ExternalController {
     getOrder = async (request: Request, response: Response) => {
         try {
             response.locals.controllerName = this.getOrder.name;
-            const data = await orderService.getOrder(request.params.orderId as string);
+
+            const orderId = GetOrderRequestSchema.parse(request.params).orderId;
+
+            const data = await orderService.getOrder(orderId);
             return sendSucceededResponse(response, data);
         } catch (error) {
             return sendFailedResponse(response, error);
@@ -29,7 +36,10 @@ export class ExternalController {
     listOrders = async (request: Request, response: Response) => {
         try {
             response.locals.controllerName = this.listOrders.name;
-            const data = await orderService.listOrders(request.query);
+
+            const query = ListOrdersRequestQuerySchema.parse(request.query);
+
+            const data = await orderService.listOrders(query);
             return sendSucceededResponse(response, data);
         } catch (error) {
             return sendFailedResponse(response, error);

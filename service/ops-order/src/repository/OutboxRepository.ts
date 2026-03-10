@@ -1,9 +1,8 @@
-import { Outbox, OutboxStatus, PrismaClient } from "@prisma/client";
+import { Outbox } from "@prisma/client";
 
 import { prisma } from "../config/PrismaConfig.js";
+import { DbClient, OutboxInfo } from "../type/Type.js";
 import * as ENV from "../type/Env.js";
-import { ITXClientDenyList } from "@prisma/client/runtime/library.js";
-import { OutboxInfo } from "../type/Type.js";
 
 export class OutboxRepository {
 
@@ -77,8 +76,9 @@ export class OutboxRepository {
         `;
     }
 
-    async createRecord(info: OutboxInfo, client: Omit<PrismaClient, ITXClientDenyList>): Promise<Outbox> {
-        const result = await client.outbox.create({ data: info });
+    async createRecord(info: OutboxInfo, db: DbClient = prisma): Promise<Outbox> {
+        const result = await db.outbox.create({ data: info });
+
         return result;
     }
 }

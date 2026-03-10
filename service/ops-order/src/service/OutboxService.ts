@@ -5,7 +5,7 @@ import { Order, Outbox, OutboxStatus, PrismaClient } from "@prisma/client";
 import { outboxRepository } from "../repository/OutboxRepository.js";
 import { ITXClientDenyList } from "@prisma/client/runtime/library.js";
 import { prisma } from "../config/PrismaConfig.js";
-import { OrderOutboxPayload as OutboxOrderPayload, OutboxInfo } from "../type/Type.js";
+import { OrderOutboxPayload as OutboxOrderPayload, OutboxInfo, DbClient } from "../type/Type.js";
 import { CreateOrderRequest } from "../schema/ExternalSchemas.js";
 
 export class OutboxService {
@@ -30,7 +30,7 @@ export class OutboxService {
         return outboxRepository.createRecord(info, client);
     }
 
-    async createOrderRecord(input: CreateOrderRequest, order: Order, client: Omit<PrismaClient, ITXClientDenyList> = prisma): Promise<Outbox> {
+    async createOrderRecord(input: CreateOrderRequest, order: Order, db?: DbClient): Promise<Outbox> {
         const outboxOrderPayload: OutboxOrderPayload = {
             orderId: order.id,
             customerId: order.customerId,
@@ -51,7 +51,9 @@ export class OutboxService {
             status: OutboxStatus.PENDING
         };
 
-        return this.createRecord(outboxInfo, client);
+        const outboxRecord = await this.createRecord(outboxInfo, db);
+
+        return outboxRecord;
     }
 }
 

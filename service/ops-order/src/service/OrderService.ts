@@ -1,6 +1,6 @@
 import { prisma } from "../config/PrismaConfig.js";
 import { orderRepository } from "../repository/OrderRepository.js";
-import { CreateOrderRequest, CreateOrderResponse, GetOrderResponse } from "../schema/ExternalSchemas.js";
+import { CreateOrderRequest, CreateOrderResponse, GetOrderResponse, ListOrdersRequestQuery } from "../schema/ExternalSchemas.js";
 import { idempotencyService } from "./IdempotencyService.js";
 import { orderItemService } from "./OrderItemsService.js";
 import { outboxService } from "./OutboxService.js";
@@ -45,6 +45,7 @@ export class OrderService {
         const order = await orderRepository.findOrderOrThrow(orderId);
 
         const result: GetOrderResponse = {
+            id: order.id,
             status: order.status,
             totalAmount: order.totalAmount.toNumber(),
             failureReason: order.failureReason,
@@ -60,7 +61,11 @@ export class OrderService {
         return result;
     }
 
-    async listOrders()
+    async listOrders(input: ListOrdersRequestQuery): Promise<any> {
+        const result = await prisma.$transaction(async (tx) => orderRepository.findOrders(input, tx));
+
+        return result;
+    }
 
 }
 

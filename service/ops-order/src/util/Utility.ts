@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 
-import { Response, Request } from "express";
+import { Response, Request, NextFunction } from "express";
+import { ZodObject } from "zod";
 
 export function getRandomNumber(min: number, max: number) {
     return Math.floor(Math.random() * (max - min + 1)) + min;

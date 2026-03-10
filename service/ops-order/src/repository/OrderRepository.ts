@@ -1,15 +1,14 @@
-import { Order, OrderItem, OrderStatus, Prisma, PrismaClient } from "@prisma/client";
-import { ITXClientDenyList, Omit } from "@prisma/client/runtime/library";
+import { Order, OrderStatus, Prisma } from "@prisma/client";
 
-import { prisma } from "../config/PrismaConfig.js";
-import { CreateOrderRequest } from "../schema/ExternalSchemas.js";
-import { OrderWithItems } from "../type/Type.js";
+import { CreateOrderRequest, ListOrdersRequestQuery, ListOrdersResponse } from "../schema/ExternalSchemas.js";
+import { DbClient, OrderWithItems } from "../type/Type.js";
 import { Exception } from "../exception/Exception.js";
+import { prisma } from "../config/PrismaConfig.js";
 
 export class OrderRepository {
 
-    async createOrder(input: CreateOrderRequest, client: Omit<PrismaClient, ITXClientDenyList> = prisma): Promise<Order> {
-        const result = await client.order.create({
+    async createOrder(input: CreateOrderRequest, db: DbClient = prisma): Promise<Order> {
+        const result = await db.order.create({
             data: {
                 address: `${input.shippingAddress.country}, ${input.shippingAddress.city}, ${input.shippingAddress.addressLine1}`,
                 currency: input.currency,
@@ -22,8 +21,8 @@ export class OrderRepository {
         return result;
     }
 
-    async findOrder(orderId: string, client: Omit<PrismaClient, ITXClientDenyList> = prisma): Promise<OrderWithItems> {
-        const result = await client.order.findUnique({
+    async findOrder(orderId: string, db: DbClient = prisma): Promise<OrderWithItems> {
+        const result = await db.order.findUnique({
             where: { id: orderId },
             include: { items: true }
         });
@@ -31,14 +30,60 @@ export class OrderRepository {
         return result;
     }
 
-    async findOrderOrThrow(orderId: string, client: Omit<PrismaClient, ITXClientDenyList> = prisma): Promise<OrderWithItems> {
-        const order = await this.findOrder(orderId);
+    async findOrderOrThrow(orderId: string, db: DbClient = prisma): Promise<OrderWithItems> {
+        const result = await this.findOrder(orderId, db);
 
-        if (!order) {
-            throw new Exception(`Order with id ${order} was not found`);
+        if (!result) {
+            throw new Exception(`Order with id ${orderId} was not found`);
         }
 
-        return order;
+        return result;
+    }
+
+    async findOrders(query: ListOrdersRequestQuery, db: DbClient = prisma): Promise<ListOrdersResponse> {
+        const where: Prisma.OrderWhereInput = {
+            ...(query.customerId && { customerId: query.customerId }),
+            ...(query.status && { status: query.status }),
+        };
+
+        const skip = (query.page - 1) * query.size;
+        const take = query.size;
+
+        const orders = await db.order.findMany({
+            where: where,
+            skip: skip,
+            take: take,
+            orderBy: { createdAt: "desc" },
+            include: { items: true }
+        });
+
+        const total = await db.order.count({ where: where });
+
+        const formattedOrders = orders.map((order) => ({
+            id: order.id,
+            status: order.status,
+            items: order.items.map((item) => ({
+                quantity: item.quantity.toNumber(),
+                sku: item.sku,
+                unitPrice: item.unitPrice.toNumber()
+            })),
+            totalAmount: order.totalAmount.toNumber(),
+            failureReason: order.failureReason,
+            createdAt: order.createdAt,
+            updatedAt: order.updatedAt
+        }));
+
+        const result: ListOrdersResponse = {
+            data: formattedOrders,
+            meta: {
+                page: query.page,
+                size: query.size,
+                total: total,
+                totalPages: Math.ceil(total / query.size),
+            }
+        };
+
+        return result;
     }
 
 }

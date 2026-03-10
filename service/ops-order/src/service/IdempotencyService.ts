@@ -1,23 +1,25 @@
-import { Idempotency, Order, PrismaClient } from "@prisma/client";
-import { ITXClientDenyList } from "@prisma/client/runtime/library";
+import { Idempotency, Order } from "@prisma/client";
 
-import { prisma } from "../config/PrismaConfig.js";
 import { idempotencyRepository } from "../repository/IdempotencyRepository.js";
-import { IdempotencyInfo } from "../type/Type.js";
+import { DbClient, IdempotencyInfo } from "../type/Type.js";
 import { CreateOrderRequest, CreateOrderResponse } from "../schema/ExternalSchemas.js";
 import { hash } from "../util/Utility.js";
 
 export class IdempotencyService {
 
-    async findRecord(idempotencyKey: string, client?: Omit<PrismaClient, ITXClientDenyList>): Promise<Idempotency> {
-        return idempotencyRepository.findRecord(idempotencyKey, client);
+    async findRecord(idempotencyKey: string, db?: DbClient): Promise<Idempotency> {
+        const idempotencyRecord = await idempotencyRepository.findRecord(idempotencyKey, db);
+
+        return idempotencyRecord;
     }
 
-    async createRecord(idempotencyInfo: IdempotencyInfo, client?: Omit<PrismaClient, ITXClientDenyList>): Promise<Idempotency> {
-        return idempotencyRepository.createRecord(idempotencyInfo, client);
+    async createRecord(idempotencyInfo: IdempotencyInfo, db?: DbClient): Promise<Idempotency> {
+        const idempotencyRecord = await idempotencyRepository.createRecord(idempotencyInfo, db);
+
+        return idempotencyRecord;
     }
 
-    async createOrderRecord(idempotencyKey: string, input: CreateOrderRequest, order: Order, responseBody: CreateOrderResponse, client?: Omit<PrismaClient, ITXClientDenyList>): Promise<Idempotency> {
+    async createOrderRecord(idempotencyKey: string, input: CreateOrderRequest, order: Order, responseBody: CreateOrderResponse, db?: DbClient): Promise<Idempotency> {
         const idempotencyInfo: IdempotencyInfo = {
             key: idempotencyKey,
             requestHash: hash(input),
@@ -28,7 +30,9 @@ export class IdempotencyService {
             expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24)
         };
 
-        return this.createRecord(idempotencyInfo, client);
+        const idempotencyRecord = await this.createRecord(idempotencyInfo, db);
+
+        return idempotencyRecord;
     }
 
 

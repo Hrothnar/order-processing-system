@@ -1,7 +1,12 @@
-import { Order, OrderItem, OutboxStatus } from "@prisma/client";
-import { OrderItemsRequestSchema, ShippingAddressRequestSchema } from "../schema/ExternalSchemas";
+import { Request, Response, NextFunction } from "express";
+
+import { Order, OrderItem, OutboxStatus, Prisma, PrismaClient } from "@prisma/client";
+
+import { OrderItemsRequestSchema, ShippingAddressRequestSchema } from "../schema/ExternalSchemas.js";
 
 export const IDEMPOTENCY_HEADER_NAME = "idempotency-key";
+
+export type DbClient = PrismaClient | Prisma.TransactionClient;
 
 export interface OutboxInfo {
     eventId: string,
