@@ -3,6 +3,7 @@ import { Response, Request } from "express";
 import { sendFailedResponse, sendSucceededResponse } from "../util/Utility.js";
 import { orderService } from "../service/OrderService.js";
 import { CreateOrderHeaderRequestSchema, CreateOrderRequestSchema, GetOrderRequestSchema, ListOrdersRequestQuerySchema } from "../schema/ExternalSchemas.js";
+import { IDEMPOTENCY_HEADER_NAME } from "../type/Type.js";
 
 export class ExternalController {
 
@@ -11,7 +12,7 @@ export class ExternalController {
             response.locals.controllerName = this.createOrder.name;
 
             const body = CreateOrderRequestSchema.parse(request.body);
-            const idempotencyKey = CreateOrderHeaderRequestSchema.parse(request.header)["idempotency-key"];
+            const idempotencyKey = CreateOrderHeaderRequestSchema.parse(request.headers)[IDEMPOTENCY_HEADER_NAME];
 
             const data = await orderService.createOrder(body, idempotencyKey);
             return sendSucceededResponse(response, data);

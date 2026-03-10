@@ -10,7 +10,7 @@ import { CreateOrderRequest } from "../schema/ExternalSchemas.js";
 
 export class OutboxService {
 
-    async claimBatch(limit: number): Promise<any> {
+    async claimBatch(limit: number): Promise<Outbox[]> {
         return outboxRepository.claimBatch(limit);
     }
 

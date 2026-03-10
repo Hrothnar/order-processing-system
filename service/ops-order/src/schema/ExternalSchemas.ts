@@ -5,10 +5,15 @@ import { z } from "zod";
 import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 import { OrderStatus } from "@prisma/client";
 
-import { registry } from "./SchemaRegistry.js";
 import { IDEMPOTENCY_HEADER_NAME } from "../type/Type.js";
 
 extendZodWithOpenApi(z);
+
+// =======================================================================================
+
+export const CreateOrderHeaderRequestSchema = z.object({
+    [IDEMPOTENCY_HEADER_NAME]: z.string().nonempty().openapi({ example: randomUUID() })
+});
 
 export const OrderItemsRequestSchema = z.object({
     sku: z.string().nonempty(),
@@ -37,6 +42,8 @@ export const CreateOrderResponseSchema = z.object({
     createdAt: z.date()
 }).openapi("CreateOrderResponse");
 
+// =======================================================================================
+
 export const GetOrderRequestSchema = z.object({
     orderId: z.string().nonempty().openapi({ example: randomUUID() })
 }).openapi("GetOrderRequest");
@@ -50,6 +57,8 @@ export const GetOrderResponseSchema = z.object({
     createdAt: z.date(),
     updatedAt: z.date()
 }).openapi("GetOrderResponse");
+
+// =======================================================================================
 
 export const ListOrdersRequestQuerySchema = z.object({
     customerId: z.string().nonempty().openapi({ example: randomUUID() }),
@@ -68,7 +77,7 @@ export const ListOrdersResponseSchema = z.object({
     })
 }).openapi("ListOrdersResponse");
 
-
+// =======================================================================================
 
 export type CreateOrderRequest = z.infer<typeof CreateOrderRequestSchema>;
 export type CreateOrderResponse = z.infer<typeof CreateOrderResponseSchema>;
@@ -77,68 +86,3 @@ export type ShippingAddressRequestSchema = z.infer<typeof ShippingAddressRequest
 export type GetOrderResponse = z.infer<typeof GetOrderResponseSchema>;
 export type ListOrdersRequestQuery = z.infer<typeof ListOrdersRequestQuerySchema>;
 export type ListOrdersResponse = z.infer<typeof ListOrdersResponseSchema>;
-
-
-
-export const CreateOrderHeaderRequestSchema = z.object({
-    [IDEMPOTENCY_HEADER_NAME]: z.string().nonempty().openapi({ example: randomUUID() })
-});
-
-registry.registerPath({
-    method: "post",
-    path: "/api/external/v1/orders/create",
-    summary: "Creates a new order with provided items",
-    tags: ["Orders"],
-    request: {
-        body: {
-            content: {
-                "application/json": { schema: CreateOrderRequestSchema },
-            },
-        },
-        headers: CreateOrderHeaderRequestSchema
-    },
-    responses: {
-        201: {
-            description: "Created",
-            content: {
-                "application/json": { schema: CreateOrderResponseSchema },
-            },
-        },
-    },
-});
-
-registry.registerPath({
-    method: "get",
-    path: "/api/external/v1/orders/{orderId}",
-    summary: "Returns an order by the provided orderId",
-    tags: ["Orders"],
-    request: {
-        params: GetOrderRequestSchema
-    },
-    responses: {
-        200: {
-            description: "Returned",
-            content: {
-                "application/json": { schema: GetOrderResponseSchema },
-            },
-        },
-    },
-});
-
-registry.registerPath({
-    method: "get",
-    path: "/api/external/v1/orders",
-    summary: "Returns all orders matching query parameters",
-    tags: ["Orders"],
-    request: {
-        query: ListOrdersRequestQuerySchema
-    },
-    responses: {
-        200: {
-            description: "Returned",
-            content: {
-                "application/json": { schema: ListOrdersResponseSchema },
-            },
-        },
-    },
-});

@@ -5,8 +5,8 @@ import { kafkaProducer } from "./broker/producer/KafkaProducer.js";
 import { kafkaConfig } from "./config/KafkaConfig.js";
 import { sleep } from "./util/Utility.js";
 import { outboxWorker } from "./worker/OutboxWorker.js";
-import { registerOpenAPI } from "./schema/SchemaRegistry.js";
-import { registryRouters } from "./router/RouterRegistry.js";
+import { registerOpenAPI } from "./config/OpenApiRegistry.js";
+import { registerRouters } from "./config/RouterRegistry.js";
 
 const HOST = process.env.HOST;
 const PORT = Number(process.env.PORT);
@@ -20,7 +20,6 @@ app.listen(PORT, HOST, async () => {
     try {
 
         await sleep();
-
         // await kafkaConfig.initializeKafka();
         // await kafkaConfig.registerProducer();
         // await kafkaConfig.registerConsumer();
@@ -28,10 +27,10 @@ app.listen(PORT, HOST, async () => {
 
         // await kafkaProducer.send([{ key: "test", value: JSON.stringify({ payload: "some cool information!!!" }) }]);
 
-        registryRouters(app);
-        registerOpenAPI(app);
+        registerRouters(app);
+        await registerOpenAPI(app);
 
-        // outboxWorker.registerWorker();
+        outboxWorker.registerWorker();
 
         console.log(`[Server]\t\tStarted and running at [${HOST}:${PORT}].`);
         console.log("=======================================================================================================");
