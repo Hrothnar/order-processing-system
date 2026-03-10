@@ -1,4 +1,7 @@
-import { Response, Request } from "express";
+import crypto from "node:crypto";
+
+import { Response, Request, NextFunction } from "express";
+import { ZodObject } from "zod";
 
 export function getRandomNumber(min: number, max: number) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -31,4 +34,12 @@ export function sendSucceededResponse(response: Response, data?: any, code?: num
     }
 
     return response.status(code).json(data);
+}
+
+export function hash(body: Record<string, any>): string {
+    const canonical = JSON.stringify(body);
+    return crypto
+        .createHash("sha256")
+        .update(canonical)
+        .digest("hex");
 }

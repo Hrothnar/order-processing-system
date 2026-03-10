@@ -1,6 +1,7 @@
-import { OutboxStatus } from "@prisma/client";
+import { Outbox } from "@prisma/client";
 
 import { prisma } from "../config/PrismaConfig.js";
+import { DbClient, OutboxInfo } from "../type/Type.js";
 import * as ENV from "../type/Env.js";
 
 export class OutboxRepository {
@@ -73,6 +74,12 @@ export class OutboxRepository {
                 AND lockedAt IS NOT NULL
                 AND lockedAt < now() - (interval '1 second' * ${ENV.OUTBOX_WORKER_LEASE_MIN * 60});
         `;
+    }
+
+    async createRecord(info: OutboxInfo, db: DbClient = prisma): Promise<Outbox> {
+        const result = await db.outbox.create({ data: info });
+
+        return result;
     }
 }
 

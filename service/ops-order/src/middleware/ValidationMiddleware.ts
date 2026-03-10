@@ -1,24 +1,33 @@
 import { Request, Response, NextFunction } from "express";
-import { ZodObject, ZodError } from "zod";
+import { ZodObject } from "zod";
 
 import { sendFailedResponse } from "../util/Utility.js";
-import { Exception } from "../exception/Exception.js";
 
-export const validate = (schemas: { [key: string]: ZodObject }): any => {
-    return (request: Request | any, response: Response, next: NextFunction): void => {
-        for (const [key, schema] of Object.entries(schemas)) {
-            try {
-                const result = schema.parse(request[key]);
-                request[key] = result;
-            } catch (error) {
-                if (error instanceof ZodError) {
-                    return sendFailedResponse(response, new Exception(error.message, 404));
+/**
+ * @deprecated Express 5 does not allow assign "query" which leads to unwanted workarounds
+ * @param schemas 
+ * @returns 
+ */
+export const validate = (schemas: Record<string, ZodObject<any>>) => {
+    return (request: Request, response: Response, next: NextFunction) => {
+        try {
+            for (const [key, schema] of Object.entries(schemas)) {
+                const parsed = schema.parse(request[key as keyof Request]);
+
+                if (key === "query") {
+                    Object.assign(request.query, parsed);
+                } else if (key === "params") {
+                    Object.assign(request.params, parsed);
+                } else if (key === "body") {
+                    Object.assign(request.body, parsed);
+                } else {
+                    (request as any)[key] = parsed;
                 }
-
-                return sendFailedResponse(response, error);
             }
-        }
 
-        return next();
-    };
+            next();
+        } catch (error) {
+            return sendFailedResponse(response, error);
+        }
+    }
 }
