@@ -1,13 +1,13 @@
 services:
-  ops-order:
-    build: ./service/ops-order
-    ports:
-      - "3001:3001"
-    env_file: ./service/ops-order/.env
-    depends_on:
-      - postgres
-      - kafka
-      # - redis
+  # ops-order:
+  #   build: ./service/ops-order
+  #   ports:
+  #     - "3001:3001"
+  #   env_file: ./service/ops-order/.env
+  #   depends_on:
+  #     - postgres
+  #     - kafka
+  #     # - redis
 
   # ops-fulfillment:
   #   build: ./service/ops-fulfillment
@@ -41,16 +41,16 @@ services:
   #   depends_on:
   #     - kafka
 
-  postgres:
-    image: postgres:17.7
-    environment:
-      POSTGRES_DB: order
-      POSTGRES_USER: marshmallow
-      POSTGRES_PASSWORD: tasty
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
+  # postgres:
+  #   image: postgres:17.7
+  #   environment:
+  #     POSTGRES_DB: order
+  #     POSTGRES_USER: marshmallow
+  #     POSTGRES_PASSWORD: tasty
+  #   ports:
+  #     - "5432:5432"
+  #   volumes:
+  #     - postgres-data:/var/lib/postgresql/data
 
   # redis:
   #   image: redis:7.4.7
@@ -75,7 +75,7 @@ services:
       # PLAINTEXT_HOST://:9094 - for the host machine to connect (unencrypted)
       # CONTROLLER://:9093 - internal controller communication (KRaft metadata)
       KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,PLAINTEXT_HOST://:9094,CONTROLLER://:9093
-      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9094 # command to Kafka to advertise reachable addresses for use
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://${KAFKA_ENVIRONMENT}:9092,PLAINTEXT_HOST://${KAFKA_ENVIRONMENT}:9094 # command to Kafka to advertise reachable addresses for use
       KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,CONTROLLER:PLAINTEXT # encoding protocols for the exposed ports
       KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER # which listener is used for KRaft controller traffic
       KAFKA_CFG_INTER_BROKER_LISTENER_NAME: PLAINTEXT # which listener brokers use to talk to each other

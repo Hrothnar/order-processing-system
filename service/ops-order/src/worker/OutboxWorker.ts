@@ -1,37 +1,39 @@
 import { kafkaProducer } from "../broker/producer/KafkaProducer.js";
 import { outboxService } from "../service/OutboxService.js";
-import * as ENV from "../type/Env.js";
 import { OrderOutboxPayload } from "../type/Type.js";
+import * as ENV from "../type/Env.js";
 
 export class OutboxWorker {
 
     private map = new Map<string, NodeJS.Timeout>();
 
     registerWorker(): void {
+        let cycle = 1;
         const interval = setInterval(async () => {
-            console.log(`Interval job is triggered`);
             await outboxService.recuperateExpiredLeases();
 
             const selectedOutboxRecords = await outboxService.claimBatch(8);
-            return;
 
             if (selectedOutboxRecords.length) {
                 for (const outboxRecord of selectedOutboxRecords) {
-                    // const {p} = outboxRecord;
+                    const { payload, id } = outboxRecord;
                     try {
-                        // await kafkaProducer.send({});
-                        // await outboxService.markAsPublished(outboxRecord.id);
+                        await kafkaProducer.send(payload as unknown as OrderOutboxPayload);
+                        throw new Error("AAAAAAAAAAa");
+                        await outboxService.markAsPublished(Number(id));
                     } catch (error) {
-                        await outboxService.markForRetry(outboxRecord.id);
-                        console.log(`Outbox record ${outboxRecord.id} was not fully published, marked for retry`);
+                        await outboxService.markForRetry(Number(id));
+                        console.log(`[OutboxWorker]\t\tOutbox record [${outboxRecord.id}] was not fully published, marked for retry`);
                     }
                 }
             }
+
+            console.log(`[OutboxWorker]\t\tOutbox worker cycle [${cycle++}] on PPID [${process.ppid}] has successfully published [${selectedOutboxRecords.length}] records. Time: ${new Date()}`);
         }, ENV.OUTBOX_WORKER_CYCLE_DELAY_MIN * 60 * 1000);
 
         this.map.set("outbox-worker", interval);
 
-        console.log(`Outbox worker has been registered with the cycle time ${ENV.OUTBOX_WORKER_CYCLE_DELAY_MIN} min.`);
+        console.log(`[OutboxWorker]\t\tOutbox worker has been registered with the cycle time ${ENV.OUTBOX_WORKER_CYCLE_DELAY_MIN} min.`);
     }
 }
 

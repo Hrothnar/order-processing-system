@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 
-import { Order, OrderItem, OutboxStatus, Prisma, PrismaClient } from "@prisma/client";
+import { Order, OrderItem, OrderStatus, OutboxStatus, Prisma, PrismaClient } from "@prisma/client";
 
 import { OrderItemsRequestSchema, ShippingAddressRequestSchema } from "../schema/ExternalSchemas.js";
 
@@ -40,4 +40,10 @@ export interface OrderOutboxPayload {
 
 export interface OrderWithItems extends Order {
     items: OrderItem[]
+}
+
+export interface OrderProcessReport {
+    orderId: string,
+    status: OrderStatus,
+    failureReason: string
 }

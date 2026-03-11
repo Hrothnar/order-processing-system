@@ -18,19 +18,16 @@ app.use(express.urlencoded({ extended: false }));
 
 app.listen(PORT, HOST, async () => {
     try {
-
-        await sleep();
         // await kafkaConfig.initializeKafka();
         // await kafkaConfig.registerProducer();
         // await kafkaConfig.registerConsumer();
-        // await kafkaConfig.subscribeConsumer(["ops-order"]);
-
-        // await kafkaProducer.send([{ key: "test", value: JSON.stringify({ payload: "some cool information!!!" }) }]);
 
         registerRouters(app);
         await registerOpenAPI(app);
-
+        
         outboxWorker.registerWorker();
+
+        await sleep(); // just for beautiful logs
 
         console.log(`[Server]\t\tStarted and running at [${HOST}:${PORT}].`);
         console.log("=======================================================================================================");

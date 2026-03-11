@@ -5,7 +5,7 @@ const createPrismaClient = () => {
         log: [
             { emit: "stdout", level: "error" },
             { emit: "stdout", level: "warn" },
-            { emit: "stdout", level: "query" }
+            // { emit: "stdout", level: "query" }
         ]
     });
 }
