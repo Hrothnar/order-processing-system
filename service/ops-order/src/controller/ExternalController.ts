@@ -4,6 +4,7 @@ import { sendFailedResponse, sendSucceededResponse } from "../util/Utility.js";
 import { orderService } from "../service/OrderService.js";
 import { CreateOrderHeaderRequestSchema, CreateOrderRequestSchema, GetOrderRequestSchema, ListOrdersRequestQuerySchema } from "../schema/ExternalSchemas.js";
 import { IDEMPOTENCY_HEADER_NAME } from "../type/Type.js";
+import { externalHandler } from "../handler/ExternalHandler.js";
 
 export class ExternalController {
 
@@ -14,7 +15,7 @@ export class ExternalController {
             const body = CreateOrderRequestSchema.parse(request.body);
             const idempotencyKey = CreateOrderHeaderRequestSchema.parse(request.headers)[IDEMPOTENCY_HEADER_NAME];
 
-            const data = await orderService.createOrder(body, idempotencyKey);
+            const data = await externalHandler.createOrder(body, idempotencyKey);
             return sendSucceededResponse(response, data);
         } catch (error) {
             return sendFailedResponse(response, error);
@@ -27,7 +28,7 @@ export class ExternalController {
 
             const orderId = GetOrderRequestSchema.parse(request.params).orderId;
 
-            const data = await orderService.getOrder(orderId);
+            const data = await externalHandler.getOrder(orderId);
             return sendSucceededResponse(response, data);
         } catch (error) {
             return sendFailedResponse(response, error);
@@ -40,7 +41,7 @@ export class ExternalController {
 
             const query = ListOrdersRequestQuerySchema.parse(request.query);
 
-            const data = await orderService.listOrders(query);
+            const data = await externalHandler.listOrders(query);
             return sendSucceededResponse(response, data);
         } catch (error) {
             return sendFailedResponse(response, error);

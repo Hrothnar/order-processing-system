@@ -2,7 +2,6 @@ import { Order, OrderStatus, Prisma } from "@prisma/client";
 
 import { CreateOrderRequest, ListOrdersRequestQuery, ListOrdersResponse } from "../schema/ExternalSchemas.js";
 import { DbClient, EventHandle, OrderWithItems } from "../type/Type.js";
-import { Exception } from "../exception/Exception.js";
 import { prisma } from "../config/PrismaConfig.js";
 
 export class OrderRepository {
@@ -26,16 +25,6 @@ export class OrderRepository {
             where: { id: orderId },
             include: { items: true }
         });
-
-        return result;
-    }
-
-    async findOrderOrThrow(orderId: string, db: DbClient = prisma): Promise<OrderWithItems> {
-        const result = await this.findOrder(orderId, db);
-
-        if (!result) {
-            throw new Exception(`Order with id ${orderId} was not found`);
-        }
 
         return result;
     }
@@ -85,7 +74,6 @@ export class OrderRepository {
 
         return result;
     }
-
 
     async updateStatus(report: EventHandle, db: DbClient = prisma): Promise<Order> {
         const result = await db.order.update({
