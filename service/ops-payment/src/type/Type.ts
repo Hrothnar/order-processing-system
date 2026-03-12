@@ -1,25 +1,33 @@
 import { Request, Response, NextFunction } from "express";
 
-import { Order, OrderItem, OrderStatus, OutboxStatus, Prisma, PrismaClient } from "@prisma/client";
-
-import { OrderItemsRequestSchema, ShippingAddressRequestSchema } from "../schema/ExternalSchemas.js";
-
 export const IDEMPOTENCY_HEADER_NAME = "idempotency-key";
-
-export type DbClient = PrismaClient | Prisma.TransactionClient;
 
 export interface Cool {
     isItCool: boolean
 }
 
-export interface OutboxInfo {
-    eventId: string,
-    aggregateType: string,
-    aggregateId: string
-    eventName: string
-    eventVersion: number,
-    payload: Record<string, any>,
-    status: OutboxStatus
+export enum OrderStatus {
+    PENDING = "PENDING",
+    PAYMENT_AUTHORIZED = "PAYMENT_AUTHORIZED",
+    PAYMENT_FAILED = "PAYMENT_FAILED",
+    INVENTORY_RESERVED = "INVENTORY_RESERVED",
+    INVENTORY_REJECTED = "INVENTORY_REJECTED",
+    FULFILLMENT_REQUESTED = "FULFILLMENT_REQUESTED",
+    FULFILLED = "FULFILLED",
+    CANCELLED = "CANCELLED",
+    COMPLETED = "COMPLETED"
+}
+
+export interface OrderItemsRequest {
+    sku: string,
+    quantity: number,
+    unitPrice: number
+}
+
+export interface ShippingAddressRequest {
+    country: string,
+    city: string,
+    addressLine1: string
 }
 
 export interface IdempotencyInfo {
@@ -35,15 +43,11 @@ export interface IdempotencyInfo {
 export interface OrderOutboxPayload {
     orderId: string,
     customerId: string,
-    items: OrderItemsRequestSchema[],
+    items: OrderItemsRequest[],
     currency: string,
     totalAmount: number,
-    address: ShippingAddressRequestSchema,
+    address: ShippingAddressRequest,
     createdAt: Date
-}
-
-export interface OrderWithItems extends Order {
-    items: OrderItem[]
 }
 
 export interface OrderReport {
@@ -60,9 +64,9 @@ export interface OrderEvent {
 }
 
 export interface EventEmit extends OrderEvent {
-    payload: OrderOutboxPayload
+    payload: OrderReport
 }
 
 export interface EventHandle extends OrderEvent {
-    payload: OrderReport
+    payload: OrderOutboxPayload
 }

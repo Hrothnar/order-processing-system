@@ -1,8 +1,6 @@
 import express from "express";
 
-import "./config/PrismaConfig.js";
 import { sleep } from "./util/Utility.js";
-import { outboxWorker } from "./worker/OutboxWorker.js";
 import { registerOpenAPI } from "./config/OpenApiRegistry.js";
 import { registerRouters } from "./config/RouterRegistry.js";
 import { HOST, PORT } from "./type/Env.js";
@@ -17,8 +15,6 @@ app.listen(PORT, HOST, async () => {
         registerRouters(app);
         await registerOpenAPI(app);
         
-        outboxWorker.registerWorker();
-
         await sleep(); // just for beautiful logs
 
         console.log(`[Server]\t\tStarted and running at [${HOST}:${PORT}]`);
