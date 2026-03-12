@@ -1,7 +1,7 @@
 import { Order, OrderStatus, Prisma } from "@prisma/client";
 
 import { CreateOrderRequest, ListOrdersRequestQuery, ListOrdersResponse } from "../schema/ExternalSchemas.js";
-import { DbClient, OrderWithItems } from "../type/Type.js";
+import { DbClient, EventHandle, OrderWithItems } from "../type/Type.js";
 import { Exception } from "../exception/Exception.js";
 import { prisma } from "../config/PrismaConfig.js";
 
@@ -82,6 +82,19 @@ export class OrderRepository {
                 totalPages: Math.ceil(total / query.size),
             }
         };
+
+        return result;
+    }
+
+
+    async updateStatus(report: EventHandle, db: DbClient = prisma): Promise<Order> {
+        const result = await db.order.update({
+            where: { id: report.payload.orderId },
+            data: {
+                status: report.payload.status,
+                failureReason: report.payload.failureReason
+            }
+        });
 
         return result;
     }

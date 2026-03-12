@@ -42,8 +42,23 @@ export interface OrderWithItems extends Order {
     items: OrderItem[]
 }
 
-export interface OrderProcessReport {
+export interface OrderReport {
     orderId: string,
     status: OrderStatus,
     failureReason: string
+}
+
+export interface OrderEvent {
+    eventId: string,
+    emitter: string
+    createdAt: Date,
+    payload: Record<string, any>
+}
+
+export interface EventEmit extends OrderEvent {
+    payload: OrderOutboxPayload
+}
+
+export interface EventHandle extends OrderEvent {
+    payload: OrderReport
 }

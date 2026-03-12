@@ -23,8 +23,9 @@ export class KafkaConfig {
             },
             logLevel: logLevel.ERROR,
         });
-        
 
+        await this.registerProducer();
+        await this.registerConsumer();
     }
 
     async registerProducer() {
@@ -69,33 +70,15 @@ export class KafkaConfig {
             eachMessage: kafkaConsumer.handleMessage
         });
 
-        console.log(`[Kafka]\t\t\tSubscribed to ${topics} successfully`);
+        console.log(`[Kafka]\t\t\tSubscribed to [${topics}] successfully`);
     }
 
     async getProducer() {
-        if (!this.producer) {
-            await this.initializeKafka();
-            await this.registerProducer();
-        }
-
-        return this.producer;
-    }
-
-    async getConsumer() {
-        if (!this.consumer) {
-            await this.initializeKafka();
-            await this.registerConsumer();
-        }
-
-        return this.consumer;
-    }
-
-    async getKafka() {
         if (!this.kafka) {
             await this.initializeKafka();
         }
 
-        return this.kafka;
+        return this.producer;
     }
 }
 
