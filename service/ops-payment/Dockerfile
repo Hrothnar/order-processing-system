@@ -20,4 +20,4 @@ RUN npm install --omit=dev
 
 COPY --from=build /app/dist ./dist
 
-CMD ["npm", "run", "db:start"]
+CMD ["node", "dist/index.js"]

@@ -1,9 +1,9 @@
 import { prisma } from "../config/PrismaConfig.js";
 import { Exception } from "../exception/Exception.js";
 import { idempotencyService } from "../service/IdempotencyService.js";
-import { orderItemService } from "../service/OrderItemsService";
+import { orderItemService } from "../service/OrderItemsService.js";
 import { orderService } from "../service/OrderService.js";
-import { outboxService } from "../service/OutboxService";
+import { outboxService } from "../service/OutboxService.js";
 import { hash } from "../util/Utility.js";
 import { CreateOrderRequest, CreateOrderResponse, GetOrderResponse, ListOrdersRequestQuery, ListOrdersResponse } from "../schema/ExternalSchemas.js";
 
