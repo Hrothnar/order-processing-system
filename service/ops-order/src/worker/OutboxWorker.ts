@@ -31,17 +31,17 @@ export class OutboxWorker {
                         await outboxService.markAsPublished(Number(id));
                     } catch (error) {
                         await outboxService.markForRetry(Number(id));
-                        console.log(`[OutboxWorker]\t\tOutbox record [${outboxRecord.id}] was not fully published, marked for retry`);
+                        console.log(`[OutboxWorker] --- Outbox record [${outboxRecord.id}] was not fully published, marked for retry`);
                     }
                 }
             }
 
-            console.log(`[OutboxWorker]\t\tOutbox worker cycle [${cycle++}] on PPID [${process.ppid}] has successfully published [${selectedOutboxRecords.length}] records. Time: ${new Date()}`);
+            console.log(`[OutboxWorker] --- Outbox worker cycle [${cycle++}] on PPID [${process.ppid}] has successfully published [${selectedOutboxRecords.length}] records. Time: ${new Date()}`);
         }, OUTBOX_WORKER_CYCLE_DELAY_MIN * 60 * 1000);
 
         this.map.set("outbox-worker", interval);
 
-        console.log(`[OutboxWorker]\t\tOutbox worker has been registered with the cycle time ${OUTBOX_WORKER_CYCLE_DELAY_MIN} min`);
+        console.log(`[OutboxWorker] --- Outbox worker has been registered with the cycle time ${OUTBOX_WORKER_CYCLE_DELAY_MIN} min`);
     }
 }
 

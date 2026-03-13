@@ -23,5 +23,5 @@ export async function registerOpenAPI(app: Express): Promise<void> {
     app.get("/docs.json", (request, response) => response.json(openapiDoc));
     app.use("/docs", swaggerUi.serve, swaggerUi.setup(openapiDoc));
 
-    console.log(`[OpenAPI]\t\tOpenAPI documentation [http://${HOST}:${PORT}/docs.json] and Swagger UI [http://${HOST}:${PORT}/docs] are served`);
+    console.log(`[OpenAPI] --- OpenAPI documentation [http://${HOST}:${PORT}/docs.json] and Swagger UI [http://${HOST}:${PORT}/docs] are served`);
 }

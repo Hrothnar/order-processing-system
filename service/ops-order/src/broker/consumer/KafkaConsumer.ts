@@ -15,7 +15,7 @@ export class KafkaConsumer {
             await orderService.updateStatus(event, tx);
         });
 
-        console.log(`[Kafka]\t\tMessage [${event.eventId} from [${event.emitter}] was successfully handled]`);
+        console.log(`[Kafka] --- Message [${event.eventId}] from [${event.emitter}] was successfully handled`);
     }
 }
 

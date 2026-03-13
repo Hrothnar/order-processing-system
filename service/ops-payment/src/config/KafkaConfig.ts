@@ -1,8 +1,8 @@
 import { Consumer, Kafka, logLevel, Producer } from "kafkajs";
 
 import { kafkaConsumer } from "../broker/consumer/KafkaConsumer.js";
-import { KAFKA_BROKERS, KAFKA_CLIENT_ID, KAFKA_CONSUMER_GROUP_ID } from "../type/Env.js";
 import { sleep } from "../util/Utility.js";
+import { KAFKA_BROKERS, KAFKA_CLIENT_ID, KAFKA_CONSUMER_GROUP_ID, KAFKA_CONSUMER_TOPIC_NAME } from "../type/Env.js";
 
 export class KafkaConfig {
 
@@ -35,7 +35,7 @@ export class KafkaConfig {
 
         await this.producer.connect();
 
-        console.log("[Kafka]\t\t\tProducer connection is established");
+        console.log("[Kafka] --- Kafka producer connection is established");
     }
 
     async registerConsumer() {
@@ -45,9 +45,9 @@ export class KafkaConfig {
 
         await this.consumer.connect();
 
-        await this.subscribeConsumer([KAFKA_CONSUMER_GROUP_ID]);
+        await this.subscribeConsumer([KAFKA_CONSUMER_TOPIC_NAME]);
 
-        console.log("[Kafka]\t\t\tConsumer connection is established");
+        console.log("[Kafka] --- Kafka consumer connection is established");
     }
 
     async subscribeConsumer(topics: string[]) {
@@ -70,7 +70,7 @@ export class KafkaConfig {
             eachMessage: kafkaConsumer.handleMessage
         });
 
-        console.log(`[Kafka]\t\t\tSubscribed to [${topics}] successfully`);
+        console.log(`[Kafka] --- Kafka consumer subscribed to [${topics}] successfully`);
     }
 
     async getProducer() {
