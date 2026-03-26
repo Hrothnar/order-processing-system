@@ -29,90 +29,100 @@ enum OutboxStatus {
 
 model Order {
   id                String          @id @default(uuid()) @db.Uuid
-  customerId        String          @db.Uuid
+  customerId        String          @db.Uuid                                  @map("customer_id")
   status            OrderStatus     @default(PENDING)
   currency          String          @db.Char(3)
   address           String          @db.VarChar(512)
-  totalAmount       Decimal         @db.Decimal(12, 2)
+  totalAmount       Decimal         @db.Decimal(12, 2)                        @map("total_amount")
   items             OrderItem[]
-  failureReason     String?         @db.VarChar(256)
+  failureReason     String?         @db.VarChar(256)                          @map("failure_reason")
 
-  createdAt         DateTime        @default(now()) @db.Timestamptz(3)
-  updatedAt         DateTime        @updatedAt      @db.Timestamptz(3)
+  createdAt         DateTime        @default(now()) @db.Timestamptz(3)        @map("created_at")
+  updatedAt         DateTime        @updatedAt      @db.Timestamptz(3)        @map("updated_at")     
 
   @@index([customerId])
   @@index([status])
   @@index([createdAt])
   @@index([customerId, status, createdAt])
+
+  @@map("order")
 }
 
 model OrderItem {
   id                BigInt          @id @default(autoincrement())
-  orderId           String          @db.Uuid
+  orderId           String          @db.Uuid                                  @map("order_id")
   order             Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
   sku               String          @db.VarChar(64)
   quantity          Decimal         @db.Decimal(12, 2)
-  unitPrice         Decimal         @db.Decimal(12, 2)
+  unitPrice         Decimal         @db.Decimal(12, 2)                        @map("unit_price")
 
-  createdAt         DateTime        @default(now()) @db.Timestamptz(3)
-  updatedAt         DateTime        @updatedAt      @db.Timestamptz(3)
+  createdAt         DateTime        @default(now()) @db.Timestamptz(3)        @map("created_at")
+  updatedAt         DateTime        @updatedAt      @db.Timestamptz(3)        @map("updated_at")
 
   @@index([orderId])
   @@index([sku])
+
+  @@map("order_item")
 }
 
 model Idempotency {
   id                BigInt          @id @default(autoincrement())
   key               String          @unique @db.VarChar(128)
-  requestHash       String          @db.VarChar(64)
-  responseStatus    Int
-  responseBody      Json
-  resourceType      String          @db.VarChar(32) // "order"
-  resourceId        String?         @db.Uuid        // orderId once created
-  expiresAt         DateTime        @db.Timestamptz(3)
+  requestHash       String          @db.VarChar(64)                           @map("request_hash")
+  responseStatus    Int                                                       @map("response_status")
+  responseBody      Json                                                      @map("response_body")
+  resourceType      String          @db.VarChar(32)                           @map("resource_type") // "order"
+  resourceId        String?         @db.Uuid                                  @map("resource_id")   // "orderId"
+  expiresAt         DateTime        @db.Timestamptz(3)                        @map("expires_at")
 
-  createdAt         DateTime        @default(now()) @db.Timestamptz(3)
-  updatedAt         DateTime        @updatedAt      @db.Timestamptz(3)
+  createdAt         DateTime        @default(now()) @db.Timestamptz(3)        @map("created_at")
+  updatedAt         DateTime        @updatedAt      @db.Timestamptz(3)        @map("updated_at")
 
   @@index([expiresAt])
+
+  @@map("idempotency")
 }
 
 model ProcessedEvent {
   id                BigInt          @id @default(autoincrement())
-  eventId           String          @db.Uuid
-  consumerName      String          @db.VarChar(64)
-  processedAt       DateTime        @default(now()) @db.Timestamptz(3)
+  eventId           String          @db.Uuid                                  @map("event_id")
+  consumerName      String          @db.VarChar(64)                           @map("consumer_name")
+  processedAt       DateTime        @default(now()) @db.Timestamptz(3)        @map("precessed_at")
 
-  createdAt         DateTime        @default(now()) @db.Timestamptz(3)
-  updatedAt         DateTime        @updatedAt      @db.Timestamptz(3)
+  createdAt         DateTime        @default(now()) @db.Timestamptz(3)        @map("created_at")
+  updatedAt         DateTime        @updatedAt      @db.Timestamptz(3)        @map("updated_at")
 
   @@unique([eventId, consumerName])
 
   @@index([consumerName])
+
+  @@map("processed_event")
 }
 
 model Outbox {
   id                BigInt          @id @default(autoincrement())
-  eventId           String          @db.Uuid
-  aggregateType     String          @db.VarChar(32) // "order"
-  aggregateId       String          @db.Uuid        // orderId
-  eventName         String          @db.VarChar(64) // "OrderCreated"
-  eventVersion      Int
+  eventId           String          @db.Uuid                                  @map("event_id")
+  aggregateType     String          @db.VarChar(32)                           @map("aggregate_type") // "order"
+  aggregateId       String          @db.Uuid                                  @map("aggregate_id")   // "orderId"
+  eventName         String          @db.VarChar(64)                           @map("event_name")     // "OrderCreated"
+  eventVersion      Int                                                       @map("event_version")
   payload           Json
   status            OutboxStatus    @default(PENDING)
-  retryCount        Int             @default(0)
-  lockedBy          String?         @db.VarChar(128)
-  occurredAt        DateTime        @default(now()) @db.Timestamptz(3)
-  lockedAt          DateTime?       @db.Timestamptz(3)
-  nextAttemptAt     DateTime?       @db.Timestamptz(3)
-  publishedAt       DateTime?       @db.Timestamptz(3)
+  retryCount        Int             @default(0)                               @map("retry_count")
+  lockedBy          String?         @db.VarChar(128)                          @map("locked_by")
+  occurredAt        DateTime        @default(now()) @db.Timestamptz(3)        @map("occurred_at")
+  lockedAt          DateTime?       @db.Timestamptz(3)                        @map("locked_at")
+  nextAttemptAt     DateTime?       @db.Timestamptz(3)                        @map("next_attempt_at")
+  publishedAt       DateTime?       @db.Timestamptz(3)                        @map("published_at")
 
-  createdAt         DateTime        @default(now()) @db.Timestamptz(3)
-  updatedAt         DateTime        @updatedAt      @db.Timestamptz(3)
+  createdAt         DateTime        @default(now()) @db.Timestamptz(3)        @map("created_at")
+  updatedAt         DateTime        @updatedAt      @db.Timestamptz(3)        @map("updated_at")
 
   @@unique([eventId])
 
   @@index([status])
   @@index([status, nextAttemptAt, occurredAt])
   @@index([lockedAt])
+
+  @@map("outbox")
 }

@@ -1,72 +1,125 @@
-import { prisma } from "../config/PrismaConfig.js";
+import { randomUUID } from "node:crypto";
+
+import { Order, OrderStatus } from "@prisma/client";
+
 import { orderRepository } from "../repository/OrderRepository.js";
-import { CreateOrderRequest, CreateOrderResponse, GetOrderResponse, ListOrdersRequestQuery } from "../schema/ExternalSchemas.js";
-import { idempotencyService } from "./IdempotencyService.js";
-import { orderItemService } from "./OrderItemsService.js";
-import { outboxService } from "./OutboxService.js";
-import { hash } from "../util/Utility.js";
 import { Exception } from "../exception/Exception.js";
+import { kafkaProducer } from "../broker/producer/KafkaProducer.js";
+import { CreateOrderRequest, ListOrdersRequestQuery, ListOrdersResponse } from "../schema/ExternalSchemas.js";
+import { DbClient, EventEmit, EventHandle, HandlerFunction, OrderInfo, OrderWithItems } from "../type/Type.js";
+import { KAFKA_PRODUCER_FULFILLMENT_TOPIC_NAME, KAFKA_PRODUCER_INVENTORY_TOPIC_NAME, KAFKA_PRODUCER_NAME, KAFKA_PRODUCER_NOTIFICATION_TOPIC_NAME } from "../type/Env.js";
 
 export class OrderService {
 
-    async createOrder(input: CreateOrderRequest, idempotencyKey: string): Promise<CreateOrderResponse> {
-        const result = await prisma.$transaction(async (tx) => {
-            const idempotencyRecord = await idempotencyService.findRecord(idempotencyKey, tx);
-
-            if (idempotencyRecord) {
-                if (idempotencyRecord.requestHash === hash(input)) {
-                    return idempotencyRecord.responseBody as unknown as CreateOrderResponse;
-                } else {
-                    throw new Exception(`Request has the same idempotencyKey but the body hashes differ`);
-                }
-            }
-
-            const order = await orderRepository.createOrder(input, tx);
-            await orderItemService.createOrderItems(input.items, order, tx);
-            await outboxService.createOrderRecord(input, order, tx);
-
-            const responseBody: CreateOrderResponse = {
-                createdAt: order.createdAt,
-                currency: order.currency,
-                orderId: order.id,
-                status: order.status,
-                totalAmount: order.totalAmount.toNumber()
-            };
-
-            await idempotencyService.createOrderRecord(idempotencyKey, input, order, responseBody, tx);
-
-            return responseBody;
-        });
-
-        return result;
+    private VALIDATION_CHAIN: Record<OrderStatus, HandlerFunction> = {
+        [OrderStatus.PENDING]: async (event: EventHandle, info: OrderInfo): Promise<void> => { },
+        [OrderStatus.CANCELLED]: async (event: EventHandle, info: OrderInfo): Promise<void> => { },
+        [OrderStatus.COMPLETED]: async (event: EventHandle, info: OrderInfo): Promise<void> => { },
+        [OrderStatus.PAYMENT_AUTHORIZED]: this.validateInventory,
+        [OrderStatus.PAYMENT_FAILED]: async (event: EventHandle, info: OrderInfo): Promise<void> => { },
+        [OrderStatus.INVENTORY_RESERVED]: this.validateFulfillment,
+        [OrderStatus.INVENTORY_REJECTED]: async (event: EventHandle, info: OrderInfo): Promise<void> => { },
+        [OrderStatus.FULFILLMENT_REQUESTED]: async (event: EventHandle, info: OrderInfo): Promise<void> => { },
+        [OrderStatus.FULFILLED]: async (event: EventHandle, info: OrderInfo): Promise<void> => { }
     }
 
-    async getOrder(orderId: string): Promise<GetOrderResponse> {
-        const order = await orderRepository.findOrderOrThrow(orderId);
+    async createOrder(input: CreateOrderRequest, db?: DbClient): Promise<Order> {
+        const order = await orderRepository.createOrder(input, db);
 
-        const result: GetOrderResponse = {
-            id: order.id,
-            status: order.status,
-            totalAmount: order.totalAmount.toNumber(),
-            failureReason: order.failureReason,
+        return order;
+    }
+
+    async findOrder(orderId: string, db?: DbClient): Promise<OrderWithItems> {
+        const order = await orderRepository.findOrder(orderId, db);
+
+        return order;
+    }
+
+    async findOrderOrThrow(orderId: string, db?: DbClient): Promise<OrderWithItems> {
+        const order = await this.findOrder(orderId, db);
+        if (!order) throw new Exception(`Order with id ${orderId} was not found`);
+
+        return order;
+    }
+
+    async findOrders(query: ListOrdersRequestQuery, db?: DbClient): Promise<ListOrdersResponse> {
+        const orderList = await orderRepository.findOrders(query, db);
+
+        return orderList;
+    }
+
+    async updateStatus(event: EventHandle, db?: DbClient): Promise<Order> {
+        const order = await orderRepository.updateStatus(event, db);
+
+        return order;
+    }
+
+    async getAsOrderInfo(orderId: string, db?: DbClient): Promise<OrderInfo> {
+        const order = await orderRepository.findOrder(orderId, db);
+
+        if (!order) {
+            throw new Exception(`Order under id ${orderId} was not found`);
+        }
+
+        const splittedAddress = order.address.split(", ");
+
+        const orderInfo: OrderInfo = {
+            orderId: orderId,
+            address: {
+                country: splittedAddress[0],
+                city: splittedAddress[1],
+                addressLine1: splittedAddress[2]
+            },
+            currency: order.currency,
+            customerId: order.customerId,
+            totalAmount: Number(order.totalAmount),
             items: order.items.map((item) => ({
                 quantity: item.quantity.toNumber(),
                 sku: item.sku,
                 unitPrice: item.unitPrice.toNumber()
             })),
-            createdAt: order.createdAt,
-            updatedAt: order.updatedAt
+            createdAt: order.createdAt
         };
 
-        return result;
+        return orderInfo;
     }
 
-    async listOrders(input: ListOrdersRequestQuery): Promise<any> {
-        const result = await prisma.$transaction(async (tx) => orderRepository.findOrders(input, tx));
+    async proceedInValidationChain(eventHandle: EventHandle): Promise<void> {
+        const status = eventHandle.payload.status as OrderStatus;
+        const orderId = eventHandle.payload.orderId;
+        const handler = this.VALIDATION_CHAIN[status];
 
-        return result;
+        if (!handler) {
+            throw new Exception(`Validator for ${status} was not found`);
+        }
+
+        const orderInfo = await this.getAsOrderInfo(orderId);
+
+        await handler(eventHandle, orderInfo);
     }
 
+    async validateInventory(eventHandle: EventHandle, payload: OrderInfo): Promise<void> {
+        const event: EventEmit = {
+            eventId: randomUUID(),
+            createdAt: new Date(),
+            emitter: KAFKA_PRODUCER_NAME,
+            payload: payload
+        };
+
+        await kafkaProducer.send(event, KAFKA_PRODUCER_INVENTORY_TOPIC_NAME);
+    }
+
+    async validateFulfillment(eventHandle: EventHandle, payload: OrderInfo): Promise<void> {
+        const event: EventEmit = {
+            eventId: randomUUID(),
+            createdAt: new Date(),
+            emitter: KAFKA_PRODUCER_NAME,
+            payload: payload
+        };
+
+        await kafkaProducer.send(event, KAFKA_PRODUCER_NOTIFICATION_TOPIC_NAME);
+        await kafkaProducer.send(event, KAFKA_PRODUCER_FULFILLMENT_TOPIC_NAME);
+    }
 }
 
 export const orderService = new OrderService();

@@ -1,4 +1,4 @@
-import { Outbox } from "@prisma/client";
+import { Outbox, OutboxStatus } from "@prisma/client";
 
 import { prisma } from "../config/PrismaConfig.js";
 import { DbClient, OutboxInfo } from "../type/Type.js";
@@ -6,42 +6,41 @@ import * as ENV from "../type/Env.js";
 
 export class OutboxRepository {
 
-    async claimBatch(limit: number): Promise<any> {
+    async claimBatch(limit: number): Promise<Outbox[]> {
+
         const result = await prisma.$transaction(async (tx) => {
-            const result = await tx.$executeRaw`
+            const result = await tx.$queryRaw`
             WITH picked AS (
                     SELECT id
                     FROM outbox
-                    WHERE status = 'PENDING' 
-                        AND (nextAttemptAt IS NULL OR nextAttemptAt <= now())
-                    ORDER BY occurredAt ASC
+                    WHERE status = 'PENDING'::"OutboxStatus"
+                        AND (next_attempt_at IS NULL OR next_attempt_at <= now())
+                    ORDER BY occurred_at ASC
                     FOR UPDATE SKIP LOCKED
                     LIMIT ${limit}
                 )
             UPDATE outbox AS o
-            SET status = 'PROCESSING',
-                    lockedAt = now(),
-                    lockedBy = ${ENV.OUTBOX_WORKER_NAME}
+            SET status = 'PROCESSING'::"OutboxStatus",
+                    locked_at = now(),
+                    locked_by = ${ENV.OUTBOX_WORKER_NAME}
             FROM picked
             WHERE o.id = picked.id
-            RETURNING;
-            `;
+            RETURNING *;
+        `;
 
             return result;
         });
 
-        console.log(result);
-
-        return result;
+        return result as Outbox[];
     }
 
     async markAsPublished(id: number): Promise<void> {
         await prisma.$queryRaw`
             UPDATE outbox
-            SET status = 'PUBLISHED',
-                publishedAt = now(),
-                lockedAt = NULL,
-                lockedBy = NULL
+            SET status = 'PUBLISHED'::"OutboxStatus",
+                published_at = now(),
+                locked_at = NULL,
+                locked_by = NULL
             WHERE id = ${id};
         `;
     }
@@ -50,29 +49,29 @@ export class OutboxRepository {
         await prisma.$queryRaw`
             UPDATE outbox
             SET status = CASE 
-                    WHEN retryCount + 1 >= ${ENV.OUTBOX_WORKER_MAX_RETRIES} THEN 'FAILED' 
-                    ELSE 'PENDING' 
+                    WHEN retry_count + 1 >= ${ENV.OUTBOX_WORKER_MAX_RETRIES} THEN 'FAILED'::"OutboxStatus"
+                    ELSE 'PENDING'::"OutboxStatus" 
                 END,
-                nextAttemptAt = CASE
-                    WHEN retryCount + 1 >= ${ENV.OUTBOX_WORKER_MAX_RETRIES} THEN NULL
-                    ELSE now() + (interval '1 second' * least(60, power(2, retryCount + 1)))
+                next_attempt_at = CASE
+                    WHEN retry_count + 1 >= ${ENV.OUTBOX_WORKER_MAX_RETRIES} THEN NULL
+                    ELSE now() + (interval '1 second' * least(60, power(2, retry_count + 1)))
                 END,
-                retryCount = retryCount + 1,
-                lockedAt = NULL,
-                lockedBy = NULL
-            WHERE id = ${id};        
-            `;
+                retry_count = retry_count + 1,
+                locked_at = NULL,
+                locked_by = NULL
+            WHERE id = ${id};
+        `;
     }
 
     async recuperateExpiredLeases(): Promise<void> {
         await prisma.$queryRaw`
             UPDATE outbox
-            SET status = 'PENDING',
-                lockedAt = NULL,
-                lockedBy = NULL
-            WHERE status = 'PROCESSING'
-                AND lockedAt IS NOT NULL
-                AND lockedAt < now() - (interval '1 second' * ${ENV.OUTBOX_WORKER_LEASE_MIN * 60});
+            SET status = 'PENDING'::"OutboxStatus",
+                locked_at = NULL,
+                locked_by = NULL
+            WHERE status = 'PROCESSING'::"OutboxStatus"
+                AND locked_at IS NOT NULL
+                AND locked_at < now() - (interval '1 second' * ${ENV.OUTBOX_WORKER_LEASE_MIN * 60});
         `;
     }
 

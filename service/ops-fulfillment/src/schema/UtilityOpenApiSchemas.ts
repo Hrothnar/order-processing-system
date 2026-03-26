@@ -1,0 +1,1 @@
+import { registry } from "../config/OpenApiRegistry.js";

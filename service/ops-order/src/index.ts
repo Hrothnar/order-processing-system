@@ -1,15 +1,11 @@
 import express from "express";
 
 import "./config/PrismaConfig.js";
-import { kafkaProducer } from "./broker/producer/KafkaProducer.js";
-import { kafkaConfig } from "./config/KafkaConfig.js";
 import { sleep } from "./util/Utility.js";
 import { outboxWorker } from "./worker/OutboxWorker.js";
-import { registerOpenAPI } from "./schema/SchemaRegistry.js";
-import { registryRouters } from "./router/RouterRegistry.js";
-
-const HOST = process.env.HOST;
-const PORT = Number(process.env.PORT);
+import { registerOpenAPI } from "./config/OpenApiRegistry.js";
+import { registerRouters } from "./config/RouterRegistry.js";
+import { HOST, PORT } from "./type/Env.js";
 
 export const app = express();
 
@@ -18,34 +14,26 @@ app.use(express.urlencoded({ extended: false }));
 
 app.listen(PORT, HOST, async () => {
     try {
+        registerRouters(app);
+        await registerOpenAPI(app);
+        
+        outboxWorker.registerWorker();
 
-        await sleep();
+        await sleep(); // just for beautiful logs
 
-        // await kafkaConfig.initializeKafka();
-        // await kafkaConfig.registerProducer();
-        // await kafkaConfig.registerConsumer();
-        // await kafkaConfig.subscribeConsumer(["ops-order"]);
-
-        // await kafkaProducer.send([{ key: "test", value: JSON.stringify({ payload: "some cool information!!!" }) }]);
-
-        registryRouters(app);
-        registerOpenAPI(app);
-
-        // outboxWorker.registerWorker();
-
-        console.log(`[Server]\t\tStarted and running at [${HOST}:${PORT}].`);
+        console.log(`[Server] --- Server started and running at [${HOST}:${PORT}]`);
         console.log("=======================================================================================================");
     } catch (error) {
-        console.log(`[Server]\t\tCould not start`);
+        console.log(`[Server] --- Server could not start. The program is shutting down`);
         console.error(error);
         process.exit(1);
     }
 });
 
-process.on("uncaughtException", function processUncaughtException(error: any) {
+process.on("uncaughtException", function processUncaughtException(error: Error) {
     setTimeout(() => {
         console.error(error);
-        console.log("[Server]\t\t\tAn uncaught exception has been intercepted by event listener. Program is shutting down.");
+        console.log("[Server] --- An uncaught exception has been intercepted by event listener. The program is shutting down");
         process.exit(1);
     }, 3333);
 });

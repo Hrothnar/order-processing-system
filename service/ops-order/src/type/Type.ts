@@ -1,12 +1,16 @@
 import { Request, Response, NextFunction } from "express";
 
-import { Order, OrderItem, OutboxStatus, Prisma, PrismaClient } from "@prisma/client";
+import { Order, OrderItem, OrderStatus, OutboxStatus, Prisma, PrismaClient } from "@prisma/client";
 
 import { OrderItemsRequestSchema, ShippingAddressRequestSchema } from "../schema/ExternalSchemas.js";
 
 export const IDEMPOTENCY_HEADER_NAME = "idempotency-key";
 
 export type DbClient = PrismaClient | Prisma.TransactionClient;
+
+export interface Cool {
+    isItCool: boolean
+}
 
 export interface OutboxInfo {
     eventId: string,
@@ -28,7 +32,7 @@ export interface IdempotencyInfo {
     expiresAt: Date
 }
 
-export interface OrderOutboxPayload {
+export interface OrderInfo {
     orderId: string,
     customerId: string,
     items: OrderItemsRequestSchema[],
@@ -41,3 +45,26 @@ export interface OrderOutboxPayload {
 export interface OrderWithItems extends Order {
     items: OrderItem[]
 }
+
+export interface OrderReport {
+    orderId: string,
+    status: OrderStatus,
+    failureReason: string
+}
+
+export interface OrderEvent {
+    eventId: string,
+    emitter: string
+    createdAt: Date,
+    payload: Record<string, any>
+}
+
+export interface EventEmit extends OrderEvent {
+    payload: OrderInfo
+}
+
+export interface EventHandle extends OrderEvent {
+    payload: OrderReport
+}
+
+export type HandlerFunction = (event: EventHandle, info: OrderInfo) => Promise<void>;

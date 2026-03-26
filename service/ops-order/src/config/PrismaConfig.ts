@@ -5,7 +5,7 @@ const createPrismaClient = () => {
         log: [
             { emit: "stdout", level: "error" },
             { emit: "stdout", level: "warn" },
-            { emit: "stdout", level: "query" }
+            // { emit: "stdout", level: "query" }
         ]
     });
 }
@@ -24,7 +24,7 @@ if (process.env.NODE_ENV !== "production") {
 
 prisma.$connect()
     .then(() => {
-        console.log("[PostgreSQL]\t\tConnection for server has been established.");
+        console.log("[Prisma] --- Database connection has been established");
     }).catch((error: any) => {
         console.error(error);
     });

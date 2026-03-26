@@ -1,34 +1,47 @@
+import { randomUUID } from "node:crypto";
+
 import { kafkaProducer } from "../broker/producer/KafkaProducer.js";
 import { outboxService } from "../service/OutboxService.js";
-import * as ENV from "../type/Env.js";
+import { OrderInfo, EventEmit } from "../type/Type.js";
+import { KAFKA_PRODUCER_NAME, KAFKA_PRODUCER_PAYMENT_TOPIC_NAME, OUTBOX_WORKER_CLAIM_BATCH_SIZE, OUTBOX_WORKER_CYCLE_DELAY_MIN } from "../type/Env.js";
 
 export class OutboxWorker {
 
     private map = new Map<string, NodeJS.Timeout>();
 
     registerWorker(): void {
+        let cycle = 1;
         const interval = setInterval(async () => {
-            console.log(`Interval job is triggered`);
             await outboxService.recuperateExpiredLeases();
 
-            const selectedOutboxRecords = await outboxService.claimBatch(8);
+            const selectedOutboxRecords = await outboxService.claimBatch(OUTBOX_WORKER_CLAIM_BATCH_SIZE);
 
             if (selectedOutboxRecords.length) {
                 for (const outboxRecord of selectedOutboxRecords) {
+                    const { payload, id } = outboxRecord;
                     try {
-                        await kafkaProducer.send(outboxRecord.payload);
-                        await outboxService.markAsPublished(outboxRecord.id);
+                        const event: EventEmit = {
+                            eventId: randomUUID(),
+                            createdAt: new Date(),
+                            emitter: KAFKA_PRODUCER_NAME,
+                            payload: payload as unknown as OrderInfo
+                        };
+
+                        await kafkaProducer.send(event, KAFKA_PRODUCER_PAYMENT_TOPIC_NAME);
+                        await outboxService.markAsPublished(Number(id));
                     } catch (error) {
-                        await outboxService.markForRetry(outboxRecord.id);
-                        console.log(`Outbox record ${outboxRecord.id} was not fully published, marked for retry`);
+                        await outboxService.markForRetry(Number(id));
+                        console.log(`[OutboxWorker] --- Outbox record [${outboxRecord.id}] was not fully published, marked for retry`);
                     }
                 }
             }
-        }, ENV.OUTBOX_WORKER_CYCLE_DELAY_MIN * 60 * 1000);
+
+            console.log(`[OutboxWorker] --- Outbox worker cycle [${cycle++}] on PPID [${process.ppid}] has successfully published [${selectedOutboxRecords.length}] records. Time: ${new Date()}`);
+        }, OUTBOX_WORKER_CYCLE_DELAY_MIN * 60 * 1000);
 
         this.map.set("outbox-worker", interval);
 
-        console.log(`Outbox worker has been registered with the cycle time ${ENV.OUTBOX_WORKER_CYCLE_DELAY_MIN} min.`);
+        console.log(`[OutboxWorker] --- Outbox worker has been registered with the cycle time ${OUTBOX_WORKER_CYCLE_DELAY_MIN} min`);
     }
 }
 

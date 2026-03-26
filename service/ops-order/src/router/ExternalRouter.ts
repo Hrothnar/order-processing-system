@@ -4,7 +4,7 @@ import { externalController } from "../controller/ExternalController.js";
 import { authenticate } from "../middleware/AuthenticationMiddleware.js";
 import { printRequestStatus } from "../middleware/RequestLogMiddleware.js";
 
-export const initializeExternalRouters = function (app: Express) {
+export const registerExternalRouters = function (app: Express) {
     const router = Router();
 
     router.use(authenticate);
