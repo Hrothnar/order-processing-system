@@ -12,7 +12,7 @@ export const KAFKA_BROKERS = (process.env.KAFKA_BROKERS || `${local() ? ENV : "k
 export const KAFKA_PRODUCER_TOPIC_NAME = process.env.KAFKA_PRODUCER_TOPIC_NAME || `order-status`;
 export const KAFKA_PRODUCER_NAME = process.env.KAFKA_PRODUCER_NAME || `${NAME}-emitter`;
 
-export const KAFKA_CONSUMER_TOPIC_NAME = process.env.KAFKA_CONSUMER_TOPIC_NAME || `order-central`;
+export const KAFKA_CONSUMER_TOPIC_NAME = process.env.KAFKA_CONSUMER_TOPIC_NAME || `order-central-payment`;
 export const KAFKA_CONSUMER_NAME = process.env.KAFKA_CONSUMER_NAME || `${NAME}-consumer`;
 export const KAFKA_CONSUMER_GROUP_ID = process.env.KAFKA_CONSUMER_GROUP_ID || `${NAME}-group-id`;
 

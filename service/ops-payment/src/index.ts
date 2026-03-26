@@ -16,7 +16,7 @@ app.listen(PORT, HOST, async () => {
         registerRouters(app);
         await registerOpenAPI(app);
         
-        await kafkaConfig.initializeKafka(); // TODO remove?
+        await kafkaConfig.initializeKafka();
         
         await sleep(); // just for beautiful logs
 

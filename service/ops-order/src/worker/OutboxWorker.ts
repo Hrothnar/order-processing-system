@@ -2,8 +2,8 @@ import { randomUUID } from "node:crypto";
 
 import { kafkaProducer } from "../broker/producer/KafkaProducer.js";
 import { outboxService } from "../service/OutboxService.js";
-import { OrderOutboxPayload, EventEmit } from "../type/Type.js";
-import { KAFKA_PRODUCER_NAME, OUTBOX_WORKER_CLAIM_BATCH_SIZE, OUTBOX_WORKER_CYCLE_DELAY_MIN } from "../type/Env.js";
+import { OrderInfo, EventEmit } from "../type/Type.js";
+import { KAFKA_PRODUCER_NAME, KAFKA_PRODUCER_PAYMENT_TOPIC_NAME, OUTBOX_WORKER_CLAIM_BATCH_SIZE, OUTBOX_WORKER_CYCLE_DELAY_MIN } from "../type/Env.js";
 
 export class OutboxWorker {
 
@@ -24,10 +24,10 @@ export class OutboxWorker {
                             eventId: randomUUID(),
                             createdAt: new Date(),
                             emitter: KAFKA_PRODUCER_NAME,
-                            payload: payload as unknown as OrderOutboxPayload
+                            payload: payload as unknown as OrderInfo
                         };
 
-                        await kafkaProducer.send(event);
+                        await kafkaProducer.send(event, KAFKA_PRODUCER_PAYMENT_TOPIC_NAME);
                         await outboxService.markAsPublished(Number(id));
                     } catch (error) {
                         await outboxService.markForRetry(Number(id));

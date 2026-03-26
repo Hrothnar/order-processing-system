@@ -1,11 +1,11 @@
 import { randomUUID } from "node:crypto";
 
 import { Order, Outbox, OutboxStatus, PrismaClient } from "@prisma/client";
+import { ITXClientDenyList } from "@prisma/client/runtime/library.js";
 
 import { outboxRepository } from "../repository/OutboxRepository.js";
-import { ITXClientDenyList } from "@prisma/client/runtime/library.js";
 import { prisma } from "../config/PrismaConfig.js";
-import { OrderOutboxPayload as OutboxOrderPayload, OutboxInfo, DbClient } from "../type/Type.js";
+import { OrderInfo, OutboxInfo, DbClient } from "../type/Type.js";
 import { CreateOrderRequest } from "../schema/ExternalSchemas.js";
 
 export class OutboxService {
@@ -31,7 +31,7 @@ export class OutboxService {
     }
 
     async createOrderRecord(input: CreateOrderRequest, order: Order, db?: DbClient): Promise<Outbox> {
-        const outboxOrderPayload: OutboxOrderPayload = {
+        const outboxOrderPayload: OrderInfo = {
             orderId: order.id,
             customerId: order.customerId,
             items: input.items,

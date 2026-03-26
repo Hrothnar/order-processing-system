@@ -32,7 +32,7 @@ export interface IdempotencyInfo {
     expiresAt: Date
 }
 
-export interface OrderOutboxPayload {
+export interface OrderInfo {
     orderId: string,
     customerId: string,
     items: OrderItemsRequestSchema[],
@@ -60,9 +60,11 @@ export interface OrderEvent {
 }
 
 export interface EventEmit extends OrderEvent {
-    payload: OrderOutboxPayload
+    payload: OrderInfo
 }
 
 export interface EventHandle extends OrderEvent {
     payload: OrderReport
 }
+
+export type HandlerFunction = (event: EventHandle, info: OrderInfo) => Promise<void>;

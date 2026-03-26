@@ -8,14 +8,15 @@ import { processedEventService } from "../../service/ProcessedEventService.js";
 export class KafkaConsumer {
 
     handleMessage = async (message: EachMessagePayload): Promise<void> => {
-        const event: EventHandle = JSON.parse(message.message.value.toString());
+        const caughtEvent: EventHandle = JSON.parse(message.message.value.toString());
 
         await prisma.$transaction(async (tx) => {
-            await processedEventService.createRecord(event, tx);
-            await orderService.updateStatus(event, tx);
+            await processedEventService.createRecord(caughtEvent, tx);
+            await orderService.updateStatus(caughtEvent, tx);
+            await orderService.proceedInValidationChain(caughtEvent);
         });
 
-        console.log(`[Kafka] --- Message [${event.eventId}] from [${event.emitter}] was successfully handled`);
+        console.log(`[Kafka] --- Message [${caughtEvent.eventId}] from [${caughtEvent.emitter}] was successfully handled`);
     }
 }
 

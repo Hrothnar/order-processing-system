@@ -35,7 +35,7 @@ export class KafkaConsumer {
 
         await kafkaProducer.send(event);
 
-        console.log(`[Kafka] --- Message [${event.eventId}] from [${event.emitter}] was successfully handled`);
+        console.log(`[Kafka] --- Message [${caughtEvent.eventId}] from [${caughtEvent.emitter}] was successfully handled`);
     }
 }
 

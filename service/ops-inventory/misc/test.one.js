@@ -11,7 +11,4 @@ if (!testType || !fileName) {
 const configPath = resolve(`./src/_test/config/jest.${testType}.config.ts`);
 const testFilePath = resolve(`./src/_test/${testType}/${fileName}.test.ts`);
 
-const child = spawn("jest", ["--config", configPath, testFilePath], {
-    stdio: "inherit",
-    shell: true, // Required on Linux to find the local jest binary
-});
+spawn("jest", ["--config", configPath, testFilePath], { stdio: "inherit", shell: true });
