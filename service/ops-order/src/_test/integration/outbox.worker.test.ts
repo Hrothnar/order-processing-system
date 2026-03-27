@@ -86,6 +86,7 @@ test("must work correctly (failed flow < max retries) and process a failed event
     await externalHandler.createOrder(createOrder, idempotencyKey);
 
     jest.spyOn(kafkaProducer, "send").mockRejectedValueOnce(null);
+    const temp = (ENV as any)["OUTBOX_WORKER_LEASE_MIN"];
     (ENV as any)["OUTBOX_WORKER_LEASE_MIN"] = 0;
 
     const outbox1 = await prisma.outbox.findFirst();
@@ -103,4 +104,6 @@ test("must work correctly (failed flow < max retries) and process a failed event
     expect(outbox2.lockedBy).toBe(null);
     expect(outbox2.nextAttemptAt).toBeTruthy();
     expect(outbox2.publishedAt).toBe(null);
+    
+    (ENV as any)["OUTBOX_WORKER_LEASE_MIN"] = temp;
 });
