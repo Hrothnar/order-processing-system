@@ -37,7 +37,7 @@
         "test:integration": "jest --config ./src/_test/config/jest.integration.config.ts --detectOpenHandles",
         "test:e2e": "jest --config ./src/_test/config/jest.e2e.config.ts --detectOpenHandles",
         "test": "jest --config ./src/_test/config/jest.base.config.ts --detectOpenHandles",
-        "test:one": "node ./misc/script/test.one.js"
+        "test:one": "node ./misc/test.one.js"
     },
     "dependencies": {
         "@asteasolutions/zod-to-openapi": "8.4.2",
