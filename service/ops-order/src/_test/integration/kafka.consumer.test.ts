@@ -51,7 +51,7 @@ test("must correctly process caught Kafka message", async () => {
     expect(SPY.send.mock.calls[0][0].emitter).toBe(KAFKA_PRODUCER_NAME);
 });
 
-test("must not process an already handled event and throw and error", async () => {
+test("must not process an already handled event", async () => {
     const order = await externalHandler.createOrder(createOrder, idempotencyKey);
 
     const event: EventHandle = {
@@ -70,6 +70,7 @@ test("must not process an already handled event and throw and error", async () =
     } as EachMessagePayload;
 
     await kafkaConsumer.handleMessage(message);
+    await kafkaConsumer.handleMessage(message);
 
-    await expect(kafkaConsumer.handleMessage(message)).rejects.toThrow();
+    expect(SPY.send.mock.calls.length).toBe(1);
 });

@@ -11,9 +11,12 @@ export class KafkaConsumer {
         const caughtEvent: EventHandle = JSON.parse(message.message.value.toString());
 
         await prisma.$transaction(async (tx) => {
-            await processedEventService.createRecord(caughtEvent, tx);
-            await orderService.updateStatus(caughtEvent, tx);
-            await orderService.proceedInValidationChain(caughtEvent);
+            const created = await processedEventService.createRecord(caughtEvent, tx);
+
+            if (created) {
+                await orderService.updateStatus(caughtEvent, tx);
+                await orderService.proceedInValidationChain(caughtEvent);
+            }
         });
 
         console.log(`[Kafka] --- Message [${caughtEvent.eventId}] from [${caughtEvent.emitter}] was successfully handled`);
