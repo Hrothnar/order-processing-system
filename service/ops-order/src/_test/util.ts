@@ -1,4 +1,5 @@
 import { RecordMetadata } from "kafkajs";
+
 import { kafkaProducer } from "../broker/producer/KafkaProducer";
 import { CreateOrderRequest } from "../schema/ExternalSchemas";
 import { EventEmit } from "../type/Type";
@@ -26,10 +27,7 @@ export const createOrder: CreateOrderRequest = {
 };
 
 export function intercept(): void {
-
     SPY.send = jest.spyOn(kafkaProducer, "send").mockImplementation(
         async (data: EventEmit, topic: string): Promise<RecordMetadata[]> => { return null }
     );
-
-    
 }
