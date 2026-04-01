@@ -75,12 +75,12 @@ export class OrderRepository {
         return result;
     }
 
-    async updateStatus(report: EventHandle, db: DbClient = prisma): Promise<Order> {
+    async updateStatus(event: EventHandle, db: DbClient = prisma): Promise<Order> {
         const result = await db.order.update({
-            where: { id: report.payload.orderId },
+            where: { id: event.payload.orderId },
             data: {
-                status: report.payload.status,
-                failureReason: report.payload.failureReason
+                status: event.payload.status,
+                failureReason: event.payload.failureReason
             }
         });
 
