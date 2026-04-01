@@ -1,0 +1,37 @@
+{
+    "name": "order-processing-system",
+    "version": "1.0.0",
+    "description": "A distributed system for processing orders",
+    "main": "index.js",
+    "type": "module",
+    "keywords": [
+        "nodejs",
+        "microservices",
+        "express",
+        "postgresql",
+        "redis",
+        "event-driven"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Hrothnar/order-processing-system"
+    },
+    "bugs": {
+        "url": "https://github.com/Hrothnar/order-processing-system/issues"
+    },
+    "engines": {
+        "node": ">=22.0.0"
+    },
+    "author": "Kirill Tatarenko",
+    "license": "MIT",
+    "packageManager": "pnpm@10.30.0",
+    "scripts": {
+        "build": "pnpm --filter=\"./service/**\" build",
+        "start": "pnpm --parallel --filter=\"./service/**\" start",
+        "build:start": "pnpm --parallel --filter=\"./service/**\" build:start",
+        "test": "pnpm --filter=\"./service/**\" test",
+        "test:unit": "pnpm --filter=\"./service/**\" test:unit",
+        "test:integration": "pnpm --filter=\"./service/**\" test:integration",
+        "test:e2e": "pnpm --filter=\"./service/**\" test:e2e"
+    }
+}

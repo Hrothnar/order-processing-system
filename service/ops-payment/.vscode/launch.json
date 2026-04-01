@@ -1,0 +1,76 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "buid:start",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "runtimeExecutable": "npm",
+            "runtimeArgs": [
+                "run",
+                "build:start"
+            ],
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "test:unit",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "runtimeExecutable": "npm",
+            "runtimeArgs": [
+                "run",
+                "test:unit"
+            ],
+            "envFile": "${workspaceFolder}/.env.test"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "test:integration",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "runtimeExecutable": "npm",
+            "runtimeArgs": [
+                "run",
+                "test:integration"
+            ],
+            "envFile": "${workspaceFolder}/.env.test"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "test:e2e",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "runtimeExecutable": "npm",
+            "runtimeArgs": [
+                "run",
+                "test:e2e"
+            ],
+            "envFile": "${workspaceFolder}/.env.test"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "test:one+",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "runtimeExecutable": "npm",
+            "runtimeArgs": [
+                "run",
+                "test:one+"
+            ],
+            "envFile": "${workspaceFolder}/.env.test"
+        },
+        
+    ]
+}
