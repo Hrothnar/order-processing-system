@@ -19,6 +19,7 @@ WORKDIR /app
 
 COPY package.json ./
 RUN npm install --omit=dev
+RUN apk add --no-cache openssl
 
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/prisma ./prisma

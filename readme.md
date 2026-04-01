@@ -1,5 +1,5 @@
 # Order Validation System
-A cluster of backend services for validating orders in a reliable chain.
+A distributed, event-driven backend system for processing customer orders through payment, inventory, fulfillment, and notification workflows with strong consistency guarantees using transactional outbox and idempotency patterns.
 
 ![NodeJS](https://img.shields.io/badge/node.js-6DA55F?style=for-the-badge&logo=node.js&logoColor=white) ![Express.js](https://img.shields.io/badge/express.js-%23404d59.svg?style=for-the-badge&logo=express&logoColor=%2361DAFB) ![Postgres](https://img.shields.io/badge/postgres-%23316192.svg?style=for-the-badge&logo=postgresql&logoColor=white) ![PNPM](https://img.shields.io/badge/pnpm-%234a4a4a.svg?style=for-the-badge&logo=pnpm&logoColor=f69220) ![Apache Kafka](https://img.shields.io/badge/Apache%20Kafka-000?style=for-the-badge&logo=apachekafka) ![Swagger](https://img.shields.io/badge/-Swagger-%23Clojure?style=for-the-badge&logo=swagger&logoColor=white) ![Git](https://img.shields.io/badge/git-%23F05033.svg?style=for-the-badge&logo=git&logoColor=white)
 
@@ -7,28 +7,28 @@ A cluster of backend services for validating orders in a reliable chain.
 
 
 ## Introduction
-This service exposes a set of REST API endpoints, with the primary endpoint responsible for scoring financial transactions and returning a validation result that includes a risk level and a final decision. The API is stateless, uses PostgreSQL for persistence, and provides OpenAPI documentation for straightforward integration by upstream systems.
+This project implements a microservices-based Order Processing System that demonstrates event-driven architecture using Kafka, transactional outbox pattern for reliable message delivery, idempotency at both API and consumer levels and eventual consistency across distributed services.
+
+Roughly the system processes an order through multiple stages: `PENDING -> PAYMENT -> INVENTORY -> FULFILLMENT -> COMPLETED`.
 
 
 ## Features
-- Extensible rule-based scoring pipeline with initial validation rules, including amount thresholds, nighttime activity, high-risk countries, high-risk merchant categories, velocity checks, and country mismatch detection.
-- Persistent storage of transactions, validation results, and outbox events for audit and history tracking.
-- REST API for querying validation history with pagination and filtering.
-- OpenAPI specification and Swagger UI for interactive API documentation.
-- Outbox-based message publishing for validation completed events.
+- REST API for order creation and querying
+- Fully event-driven processing pipeline
+- Transactional Outbox for reliable event publishing
+- Idempotent API and event consumers
+- Retry and backoff for failed event processing
+- Multi-service architecture with clear boundaries
+- Dockerized local environment
+- OpenAPI / Swagger documentation
 
 
 ## Tech stack
-- Java 25
-- Spring Boot 3.5.x
-    - Spring Web (Tomcat)
-    - Spring Data JPA (Hibernate, HikariCP)
-    - Jackson
-    - Jakarta Bean Validation
-- Maven
-- PostgreSQL 17.x
-- Liquibase
-- Kafka
+- Node.js + TypeScript
+- PostgreSQL
+- Apache Kafka
+- Prisma ORM
+- Docker & Docker Compose
 - Testcontainers
 
 
@@ -36,77 +36,40 @@ This service exposes a set of REST API endpoints, with the primary endpoint resp
 
 ### Prerequisites
 
-- **Option A — Container run:** Docker + Docker Compose
-- **Option B — Local run:** Java 25, Maven (optional), PostgreSQL, Kafka
-- **Option C — Hybrid run:** Java 25, Maven (optional), Docker + Docker Compose
-
----
-
-### Option A: Docker Compose (recommended)
-
-Runs the application together with all required infrastructure in an isolated environment, with the application, database, and message broker running in separate containers.
+Docker + Docker Compose
 
 ```sh
 docker compose up --build
 ```
-
-### Option B: Running locally
-
-For this approach, PostgreSQL and Kafka must be running on the host machine, and the application connection parameters must be configured accordingly.
-
-After the infrastructure is ready, run the application locally:
-
-```sh
-./mvnw spring-boot:run
-```
-or, if Maven is installed globally:
-
-```sh
-mvn spring-boot:run
-```
-
-### Option C: Hybrid run
-
-PostgreSQL and Kafka are started in containers, while the application itself runs locally and connects to the containerized infrastructure.
-
-Start PostgreSQL and Kafka using Docker Compose:
-
-```sh
-docker compose up -d postgres kafka
-```
-
-Then run the application locally:
-
-```sh
-./mvnw spring-boot:run
-```
-or
-
-```sh
-mvn spring-boot:run
-```
-
+This command starts:
+- PostgreSQL
+- Kafka (KRaft)
+- Order Service
+- Payment Service
+- Inventory Service
+- Fulfillment Service
+- Notification Service
 
 ## Quick start
 
-Run the service and submit a transaction for validation:
+Execute the docker compose command and create an order:
 
 ```sh
-curl -X POST "http://localhost:3000/api/v1/transaction/validate" \
+curl -X POST "http://127.0.0.1:3001/api/external/v1/orders/create" \
   -H "Content-Type: application/json" \
+  -H "Idempotency-Key: 82c412a6-d932-414a-89f0-5f40b1fac1db" \
   -d '{
-    "externalId": 1,
-    "userId": "c1c3a7c0-1c3b-4a2b-9e5a-7b3c1b2a9f11",
-    "merchantId": "9a1d6f88-0f93-4e58-9dd7-1c9d4a7d6c22",
-    "deviceId": "android-13-pixel-7",
-    "amount": 12000.00,
+    "customerId": "67993c38-8059-4d8b-8567-1542560584ee",
+    "items": [
+      { "sku": "SKU-1", "quantity": 33, "unitPrice": 19.99 },
+      { "sku": "SKU-2", "quantity": 14.50, "unitPrice": 25 }
+    ],
     "currency": "USD",
-    "initialized": 1735689600,
-    "merchantCategory": "GROCERIES",
-    "channel": "WEB",
-    "ipAddress": "203.0.113.10",
-    "country": "NGA",
-    "cardFingerprint": "fp_9d82kdk29d"
+    "shippingAddress": {
+      "country": "USA",
+      "city": "Austin",
+      "addressLine1": "Lincoln, 65"
+    }
   }'
 ```
 
@@ -114,100 +77,38 @@ Example response:
 
 ```json
 {
-  "id": 843,
-  "transactionId": 1021,
-  "score": 90,
-  "riskLevel": "HIGH",
-  "decision": "BLOCK",
-  "validationResults": [
-    {
-      "code": "VERY_HIGH_AMOUNT",
-      "description": "The transaction is above 9999 USD",
-      "scoreDelta": 60
-    },
-    {
-      "code": "HIGH_RISK_COUNTRY",
-      "description": "The transaction was made in high-risk country NGA",
-      "scoreDelta": 30
-    }
-  ],
-  "createdAt": "2026-12-01T11:22:33Z",
-  "updatedAt": "2026-12-01T11:22:33Z"
+  "createdAt": "2026-04-01T06:01:29.542Z",
+  "currency": "USD",
+  "orderId": "480cbbaa-34d2-4b97-ad96-46f0b2ffdb82",
+  "status": "PENDING",
+  "totalAmount": 44.99
 }
 ```
 
-
 ## Usage
 
-### Base URL
-
-All endpoints are served under the `/api` context path.
 
 ### API endpoints
 
-- `POST /api/v1/transaction/validate` - validate a transaction and return score, risk level, decision, and triggered validators.
-- `GET /api/v1/validation/{id}` - fetch a validation result by id.
-- `GET /api/v1/validation` - list validation results with optional filters (`userId`, `riskLevel`, `decision`, `from`, `to`, `page`, `size`).
-- `GET /api/v1/utility/health/liveness` - liveness probe.
-- `GET /api/v1/utility/health/readiness` - readiness probe.
+- `POST /api/v1/orders/create` - creates an order and returns basic information on confirmation.
+- `GET /api/v1/orders/{orderId}` - fetch an order status by orderId.
+- `GET /api/v1/orders` - list orders with filters (`customerId`, `status`, `page`, `size`).
+
+- `GET /api/utility/liveness` - liveness probe.
+- `GET /api/utility/readiness` - readiness probe.
 
 OpenAPI and Swagger UI:
 
-- `GET /api/v1/openapi` - raw OpenAPI spec.
-- `GET /api/swagger` - Swagger UI.
-
-### Scoring rules
-
-The default pipeline applies these validators and sums their score deltas:
-
-- High amount: amount > 4999 adds +40.
-- Very high amount: amount > 9999 adds +60.
-- Nighttime: 02:00-05:00 UTC adds +15.
-- High-risk country: country code is in `RiskCountry` list (ISO alpha-3) adds +30.
-- High-risk merchant: category in `GAMBLING`, `CRYPTO`, or `ADULT` adds +35.
-- Velocity: more than 3 validations in the last 5 minutes adds +25.
-- Country mismatch: user's recent history shows current country < 50% of last 30 days adds +20.
-
-### Risk level mapping
-
-Scores are mapped to risk levels and decisions using the configured thresholds:
-
-- `properties.risk.threshold.low` (default 30) => `LOW` / `ALLOW`
-- `properties.risk.threshold.medium` (default 70) => `MEDIUM` / `REVIEW`
-- Above the medium threshold => `HIGH` / `BLOCK`
-
-### Configuration
-
-Configuration lives under `src/main/resources/application*.yaml`. Key settings include:
-
-- Server: port `3000`, context path `/api`.
-- Database: `spring.datasource.*` (overridden by Docker Compose env vars).
-- Kafka: `spring.kafka.*` and `properties.kafka.*`.
-- Scoring thresholds: `properties.risk.threshold.*`.
-
-To run with production settings:
-
-```sh
-SPRING_PROFILES_ACTIVE=prod \
-DB_HOST=localhost \
-DB_PORT=5432 \
-DB_USER=postgres \
-DB_PASSWORD=postgres \
-./mvnw spring-boot:run
-```
-
-### Kafka outbox
-
-Each validation writes an outbox row and the scheduled publisher ships it to Kafka (topic `transaction.validation.completed`). The consumer is optional and only logs messages when `properties.kafka.consumer.enabled=true`.
+- `GET /docs.json` - raw OpenAPI spec.
+- `GET /docs` - Swagger UI.
 
 
 ## Known issues and limitations
 
 - No load or stress testing is included.
 - Authentication and authorization are not implemented.
-- Some rule thresholds are currently defined in code (e.g. amount limits, velocity window, country mismatch window).
-- Kafka consumer logic is intentionally minimal and intended for demonstration purposes only.
-
+- Monitoring tools are not included.
+- No real payment or inventory validation, they are simulated
 
 ## Getting help
 
