@@ -11,6 +11,8 @@ This project implements a microservices-based Order Processing System that demon
 
 Roughly the system processes an order through multiple stages: `PENDING -> PAYMENT -> INVENTORY -> FULFILLMENT -> COMPLETED`.
 
+![Architecture Diagram](./misc/doc/architecture.svg)
+
 
 ## Features
 - REST API for order creation and querying
